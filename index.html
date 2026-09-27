@@ -451,7 +451,12 @@ function printAuditTab(){
     return `<span>${vMatch?vMatch[1]:''}</span>`;
   }).replace(/<textarea[^>]*>([\s\S]*?)<\/textarea>/g,'<span>$1</span>')));
 }
-
+  
+window.printData = printData;
+window.printSearchTab = printSearchTab;
+window.printMonthlyTab = printMonthlyTab;
+window.printAuditTab = printAuditTab;
+  
 let db=null; // Firestore 준비되면 true 취급용 플래그로 재사용 (기존 코드와의 호환을 위해 유지)
 let entries=[]; let budget={}; let editingId=null; let currentTab='input';
 let editMode=false; let currentUser=null;
