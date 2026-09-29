@@ -134,15 +134,17 @@ tbody tr:hover{background:var(--paper-dim);}
 #modal-title{font-family:'Noto Serif KR',serif; font-size:17px; color:var(--pri-deep); margin-bottom:8px;}
 #modal-msg{font-size:13.5px; color:var(--ink-soft); margin-bottom:14px; white-space:pre-line;}
 #modal-input{margin-bottom:6px;}
-.indicator-strip{display:flex; gap:10px; overflow-x:auto; padding-bottom:10px; margin-bottom:6px; -webkit-overflow-scrolling:touch;}
-.ind-chip{flex:0 0 auto; min-width:136px; background:var(--white); border:1px solid var(--line); border-radius:10px; padding:10px 12px;}
-.ind-chip.over{border-color:var(--expense); background:var(--expense-bg);}
-.ind-cat{font-size:10.5px; color:var(--ink-soft);}
-.ind-item{font-size:13px; font-weight:700; margin:2px 0 6px; white-space:nowrap;}
-.ind-amt{font-size:12px; font-variant-numeric:tabular-nums; white-space:nowrap;}
-.ind-slash{color:var(--ink-soft);}
-.ind-remain{font-size:11.5px; color:var(--income); margin-top:4px; font-weight:600;}
-.ind-remain.neg{color:var(--expense);}
+.indicator-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-bottom:8px;}
+.indicator-grid.exp{grid-template-columns:repeat(7,1fr);}
+@media (max-width:900px){ .indicator-grid.exp{grid-template-columns:repeat(4,1fr);} }
+@media (max-width:560px){ .indicator-grid{grid-template-columns:repeat(2,1fr);} .indicator-grid.exp{grid-template-columns:repeat(2,1fr);} }
+.ind-chip{background:var(--white); border:1px solid var(--line); border-radius:8px; padding:6px 8px; min-width:0;}
+.ind-head{display:flex; align-items:baseline; justify-content:space-between; gap:4px;}
+.ind-item{font-size:11.5px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.ind-diff{font-size:11px; font-weight:700; white-space:nowrap;}
+.ind-diff.plus{color:var(--income);}
+.ind-diff.minus{color:var(--expense);}
+.ind-amt{font-size:10.5px; color:var(--ink-soft); font-variant-numeric:tabular-nums; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 
 @media print{
   #sidebar,.no-print{display:none!important;}
@@ -151,11 +153,6 @@ tbody tr:hover{background:var(--paper-dim);}
   .tab-panel.active{display:block!important;}
   body{background:#fff;}
   .card{border:1px solid #999; break-inside:avoid;}
-}
-  /* 표 내용 영역 흰색 */
-table tbody tr,
-table tbody td {
-    background-color: #FDF5FF !important;
 }
 </style>
 </head>
@@ -201,7 +198,7 @@ table tbody td {
 
     <section id="tab-input" class="tab-panel">
       <div class="panel-head"><h2 id="input-title">항목 입력</h2><p>수입·지출 내역을 입력하세요.</p></div>
-      <div class="section-title" style="margin-top:0;"> (이번 회계연도)</div>
+      <div class="section-title" style="margin-top:0;">예산 대비 현재 현황 (이번 회계연도)</div>
       <div id="budget-indicator"></div>
       <div class="card">
         <form id="entry-form">
@@ -456,12 +453,7 @@ function printAuditTab(){
     return `<span>${vMatch?vMatch[1]:''}</span>`;
   }).replace(/<textarea[^>]*>([\s\S]*?)<\/textarea>/g,'<span>$1</span>')));
 }
-  
-window.printData = printData;
-window.printSearchTab = printSearchTab;
-window.printMonthlyTab = printMonthlyTab;
-window.printAuditTab = printAuditTab;
-  
+
 let db=null; // Firestore 준비되면 true 취급용 플래그로 재사용 (기존 코드와의 호환을 위해 유지)
 let entries=[]; let budget={}; let editingId=null; let currentTab='input';
 let editMode=false; let currentUser=null;
@@ -1022,21 +1014,27 @@ function currentFiscalRange(){
   const startYear = m>=6 ? y : y-1;
   return {start: startYear+'-06-01', end: (startYear+1)+'-05-31'};
 }
+function fmtSigned(n){ return (n>=0?'+':'') + fmt(n); }
+function indChip(item, used, bud, diff){
+  const cls = diff>=0 ? 'plus' : 'minus';
+  return `<div class="ind-chip">
+    <div class="ind-head"><span class="ind-item">${item}</span><span class="ind-diff ${cls}">${fmtSigned(diff)}</span></div>
+    <div class="ind-amt">${fmt(used)} / ${fmt(bud)}</div>
+  </div>`;
+}
 function renderBudgetIndicator(){
   const el = $('#budget-indicator'); if(!el) return;
   const {start,end} = currentFiscalRange();
   const r = aggregateRange(start,end,true);
-  const list = [...BUDGET_INCOME, ...BUDGET_EXPENSE];
-  el.innerHTML = `<div class="indicator-strip">` + list.map(({category,item})=>{
-    const used = r.items[item]||0; const bud = budget[item]||0; const remain = bud-used;
-    const over = bud>0 && used>bud;
-    return `<div class="ind-chip ${over?'over':''}">
-      <div class="ind-cat">${category}</div>
-      <div class="ind-item">${item}</div>
-      <div class="ind-amt">${fmt(used)}<span class="ind-slash"> / </span>${fmt(bud)}</div>
-      <div class="ind-remain ${remain<0?'neg':''}">잔액 ${fmt(remain)}</div>
-    </div>`;
-  }).join('') + `</div>`;
+  const incomeHtml = BUDGET_INCOME.map(({item})=>{
+    const used = r.items[item]||0, bud = budget[item]||0;
+    return indChip(item, used, bud, used-bud);
+  }).join('');
+  const expenseHtml = BUDGET_EXPENSE.map(({item})=>{
+    const used = r.items[item]||0, bud = budget[item]||0;
+    return indChip(item, used, bud, bud-used);
+  }).join('');
+  el.innerHTML = `<div class="indicator-grid inc">${incomeHtml}</div><div class="indicator-grid exp">${expenseHtml}</div>`;
 }
 
 /* ---------- 렌더 전체 ---------- */
