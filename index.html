@@ -366,7 +366,10 @@ tbody tr:hover td{background:#F2E8FA;}
       <div class="panel-head"><h2>예산안</h2><p>항목별 연간 예산을 입력하세요. (이월금 제외)</p></div>
       <div id="budget-indicator-top" class="stat-row"></div>
       <div id="budget-out"></div>
-      <div class="btn-row no-print" style="margin-top:6px;"><button class="btn btn-primary" id="btn-budget-save">예산 저장</button></div>
+      <div class="btn-row no-print" style="margin-top:6px;">
+        <button class="btn btn-primary" id="btn-budget-save">예산 저장</button>
+        <button class="btn btn-outline" onclick="printBudgetTab()">인쇄</button>
+      </div>
     </section>
 
     <section id="tab-audit" class="tab-panel">
@@ -379,6 +382,7 @@ tbody tr:hover td{background:#F2E8FA;}
               <option>1분기(1~3월)</option><option>2분기(4~5월)</option>
               <option selected>3분기(6~9월)</option><option>4분기(10~12월)</option>
               <option>전반기(1~5월)</option><option>하반기(6~12월)</option>
+              <option>결산</option>
             </select>
           </div>
         </div>
@@ -549,6 +553,25 @@ function printAuditTab(){
     return `<span>${vMatch?vMatch[1]:''}</span>`;
   }).replace(/<textarea[^>]*>([\s\S]*?)<\/textarea>/g,'<span>$1</span>')));
 }
+function printBudgetTab(){
+  const build = list => {
+    let sum=0;
+    const trs = list.map(({category,item})=>{
+      const v = budget[item]||0; sum+=v;
+      return `<tr><td>${category}</td><td>${item}</td><td class="num">${fmt(v)}</td></tr>`;
+    }).join('');
+    return {trs, sum};
+  };
+  const inc = build(BUDGET_INCOME), exp = build(BUDGET_EXPENSE);
+  const html = `
+    <h2>수입 예산</h2>
+    <table><thead><tr><th>대분류</th><th>항목</th><th class="num">연간예산(원)</th></tr></thead>
+    <tbody>${inc.trs}<tr><td colspan="2"><b>수입 예산 합계</b></td><td class="num"><b>${fmt(inc.sum)}</b></td></tr></tbody></table>
+    <h2>지출 예산</h2>
+    <table><thead><tr><th>대분류</th><th>항목</th><th class="num">연간예산(원)</th></tr></thead>
+    <tbody>${exp.trs}<tr><td colspan="2"><b>지출 예산 합계</b></td><td class="num"><b>${fmt(exp.sum)}</b></td></tr></tbody></table>`;
+  printHTML('예산안', html);
+}
 
 let db=null; // Firestore 준비되면 true 취급용 플래그로 재사용 (기존 코드와의 호환을 위해 유지)
 let entries=[]; let budget={}; let editingId=null; let currentTab='input';
@@ -632,18 +655,19 @@ function aggregateRange(start,end,isFiscalStart){
 }
 
 function getQuarterRange(year,q){
-  let sYear=year, sMonth, eMonth;
+  let sYear=year, eYear=year, sMonth, eMonth;
   if(q==='3분기(6~9월)'){ sMonth=6; eMonth=9; }
   else if(q==='4분기(10~12월)'){ sMonth=10; eMonth=12; }
-  else if(q==='1분기(1~3월)'){ sYear=year+1; sMonth=1; eMonth=3; }
-  else if(q==='2분기(4~5월)'){ sYear=year+1; sMonth=4; eMonth=5; }
+  else if(q==='1분기(1~3월)'){ sYear=year+1; eYear=year+1; sMonth=1; eMonth=3; }
+  else if(q==='2분기(4~5월)'){ sYear=year+1; eYear=year+1; sMonth=4; eMonth=5; }
   else if(q==='하반기(6~12월)'){ sMonth=6; eMonth=12; }
-  else { sYear=year+1; sMonth=1; eMonth=5; } // 전반기(1~5월)
+  else if(q==='결산'){ sMonth=6; eYear=year+1; eMonth=5; }
+  else { sYear=year+1; eYear=year+1; sMonth=1; eMonth=5; } // 전반기(1~5월)
   const start = sYear+'-'+pad2(sMonth)+'-01';
-  const lastDay = new Date(sYear, eMonth, 0).getDate();
-  const end = sYear+'-'+pad2(eMonth)+'-'+pad2(lastDay);
-  const isFiscalStart = (q==='3분기(6~9월)') || (q==='하반기(6~12월)');
-  return {start,end,sYear,sMonth,eMonth,isFiscalStart};
+  const lastDay = new Date(eYear, eMonth, 0).getDate();
+  const end = eYear+'-'+pad2(eMonth)+'-'+pad2(lastDay);
+  const isFiscalStart = (q==='3분기(6~9월)') || (q==='하반기(6~12월)') || (q==='결산');
+  return {start,end,sYear,eYear,sMonth,eMonth,isFiscalStart};
 }
 
 /* ---------- 입력 ---------- */
@@ -1034,16 +1058,22 @@ function updateDiffDisplay(){
 }
 function renderAudit(){
   const year=Number($('#a-year').value), q=$('#a-quarter').value;
-  const {start,end,isFiscalStart} = getQuarterRange(year,q);
+  const {start,end,isFiscalStart,sYear,eYear} = getQuarterRange(year,q);
   const r = aggregateRange(start,end,isFiscalStart);
   lastAuditR = r;
   const qLabel = q.slice(0,3);
+  const isSettlement = (q==='결산');
+  const yearLabel = sYear===eYear ? `${sYear}년` : `${sYear}년~${eYear}년`;
+  const titleText = isSettlement ? `${yearLabel} 회계결산보고` : `${yearLabel} ${qLabel} 회계감사보고`;
+  const subtitleText = isSettlement
+    ? 'SNCT노동조합 규약에 의거 회계결산 결과를 보고합니다.'
+    : 'SNCT노동조합 규약에 의거 회계감사 실시 결과를 보고합니다.';
   const fmtDate = s=>{ const [y,m,d]=s.split('-'); return y+'년 '+Number(m)+'월 '+Number(d)+'일'; };
   const periodText = `감사대상기간 : ${fmtDate(start)} ~ ${fmtDate(end)}`;
 
   let html = `<div class="audit-banner">
-    <h3>${year}년 ${qLabel} 일반회계 감사보고</h3>
-    <p>SNCT노동조합 규약에 의거 회계감사 실시 결과를 보고합니다.</p>
+    <h3>${titleText}</h3>
+    <p>${subtitleText}</p>
     <div class="period">${periodText}</div>
   </div>`;
 
@@ -1083,7 +1113,7 @@ function renderAudit(){
 
   const out = $('#audit-out');
   out.innerHTML = html;
-  out.dataset.printTitle = `${year}년 ${qLabel} 일반회계 감사보고\nSNCT노동조합 규약에 의거 회계감사 실시 결과를 보고합니다.\n${periodText}`;
+  out.dataset.printTitle = `${titleText}\n${subtitleText}\n${periodText}`;
   refreshLockUI();
 }
 window.updateDiffDisplay = updateDiffDisplay;
