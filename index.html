@@ -154,6 +154,102 @@ tbody tr:hover{background:var(--paper-dim);}
   body{background:#fff;}
   .card{border:1px solid #999; break-inside:avoid;}
 }
+
+/* ===== UI COLOR REFRESH ===== */
+input,select,textarea{background:#FDFBFF;}
+
+table{background:#FDFBFF;}
+th,td{background:#FDFBFF;border-bottom:1px solid var(--line);}
+th{background:#F1E8FA;color:#4D3D68;}
+tbody tr:nth-child(even) td{background:#FAF7FD;}
+tbody tr:hover td{background:#F2E8FA;}
+.subtotal-row td{background:#EEE3F7 !important;}
+.grand-row td{background:#E2CFF4 !important;}
+
+.btn{border-width:1px;transition:background .15s ease,border-color .15s ease,transform .05s ease;}
+.btn:active{transform:translateY(1px);}
+
+.btn-primary,#f-submit,#btn-login{
+  background:#6F35B8;border-color:#6F35B8;color:#fff;
+}
+.btn-primary:hover,#f-submit:hover,#btn-login:hover{
+  background:#51258E;border-color:#51258E;
+}
+.btn-outline{
+  background:#F1EAF8;border-color:#B99AD8;color:#49345F;
+}
+.btn-outline:hover{
+  background:#DCC8EC;border-color:#8D63B0;
+}
+.btn-danger,#btn-reset-all{
+  background:#B83E5A;border-color:#B83E5A;color:#fff;
+}
+.btn-danger:hover,#btn-reset-all:hover{
+  background:#8E2842;border-color:#8E2842;
+}
+
+#f-cancel,#modal-cancel{
+  background:#EDE7F3;border-color:#B9A8C8;color:#49345F;
+}
+
+/* 데이터: 불러오기=파랑 / 은행업로드=청록 / 초기화=빨강 / 인쇄=회색 */
+#tab-data #btn-import{
+  background:#286FA8;border-color:#286FA8;color:#fff;
+}
+#tab-data #btn-import:hover{background:#1D537F;border-color:#1D537F;}
+#tab-data #btn-bank-upload{
+  background:#287F78;border-color:#287F78;color:#fff;
+}
+#tab-data #btn-bank-upload:hover{background:#1C5F59;border-color:#1C5F59;}
+#tab-data .btn-outline[onclick="printData()"]{
+  background:#596579;border-color:#596579;color:#fff;
+}
+#tab-data .btn-outline[onclick="printData()"]:hover{
+  background:#3E4858;border-color:#3E4858;
+}
+
+/* 검색: 검색=청록 / 인쇄=회색 */
+#btn-search{background:#287F78;border-color:#287F78;color:#fff;}
+#btn-search:hover{background:#1C5F59;border-color:#1C5F59;}
+#tab-search .btn-outline[onclick="printSearchTab()"]{
+  background:#596579;border-color:#596579;color:#fff;
+}
+#tab-search .btn-outline[onclick="printSearchTab()"]:hover{
+  background:#3E4858;border-color:#3E4858;
+}
+
+/* 월간내역: 인쇄=회색 */
+#tab-monthly .btn-outline[onclick="printMonthlyTab()"]{
+  background:#596579;border-color:#596579;color:#fff;
+}
+#tab-monthly .btn-outline[onclick="printMonthlyTab()"]:hover{
+  background:#3E4858;border-color:#3E4858;
+}
+
+/* 예산안: 저장=황금색 */
+#btn-budget-save{background:#A86A16;border-color:#A86A16;color:#fff;}
+#btn-budget-save:hover{background:#7F4F0D;border-color:#7F4F0D;}
+
+/* 회계감사: 감사실시=녹색 / 결과저장=파랑 / 인쇄=회색 */
+#btn-audit-run{background:#347A52;border-color:#347A52;color:#fff;}
+#btn-audit-run:hover{background:#245C3C;border-color:#245C3C;}
+#btn-audit-save{background:#2D6FA3;border-color:#2D6FA3;color:#fff;}
+#btn-audit-save:hover{background:#205177;border-color:#205177;}
+#tab-audit .btn-outline[onclick="printAuditTab()"]{
+  background:#596579;border-color:#596579;color:#fff;
+}
+#tab-audit .btn-outline[onclick="printAuditTab()"]:hover{
+  background:#3E4858;border-color:#3E4858;
+}
+
+/* 작은 수정/삭제 버튼 */
+.table-wrap .btn-danger,#data-table .btn-danger{
+  background:#B83E5A;border-color:#B83E5A;color:#fff;
+}
+.table-wrap .btn-danger:hover,#data-table .btn-danger:hover{
+  background:#8E2842;border-color:#8E2842;
+}
+
 </style>
 </head>
 <body>
