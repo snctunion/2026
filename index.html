@@ -289,6 +289,7 @@ tbody tr:hover td{background:#F2E8FA;}
     <button class="navbtn" data-tab="monthly">월간내역</button>
     <button class="navbtn" data-tab="budget">예산안</button>
     <button class="navbtn" data-tab="audit">회계감사</button>
+    <button class="navbtn" data-tab="codes">코드관리</button>
   </nav>
   <main id="content">
 
@@ -327,7 +328,8 @@ tbody tr:hover td{background:#F2E8FA;}
       <div class="panel-head"><h2>데이터</h2><p>전체 거래 내역과 잔액입니다.</p></div>
       <div class="btn-row no-print" style="margin-bottom:14px;">
         <button class="btn btn-outline btn-sm" onclick="printData()">인쇄</button>
-        <button class="btn btn-outline btn-sm" id="btn-import">엑셀 데이터 불러오기</button>
+        <button class="btn btn-outline btn-sm" id="btn-import">엑셀파일 업로드</button>
+        <input type="file" id="excel-file" accept=".xlsx,.xls,.csv" style="display:none;">
         <button class="btn btn-outline btn-sm" id="btn-bank-upload">은행내역 업로드</button>
         <input type="file" id="bank-file" accept=".xlsx,.xls,.csv" style="display:none;">
         <button class="btn btn-danger btn-sm" id="btn-reset-all">전체 초기화</button>
@@ -395,6 +397,12 @@ tbody tr:hover td{background:#F2E8FA;}
       </div>
     </section>
 
+    <section id="tab-codes" class="tab-panel">
+      <div class="panel-head"><h2>적요 코드관리</h2><p>수입은 알파벳(A,B,C…), 지출은 2자리 숫자(01,02…) 코드예요. 은행 메모 맨 앞에 이 코드를 적으면 업로드 시 자동 인식돼요. 이월금·업무추진비 관련 특수항목은 이름은 못 바꾸지만 코드는 바꿀 수 있어요.</p></div>
+      <div id="codes-out"></div>
+      <div class="btn-row no-print" style="margin-top:6px;"><button class="btn btn-primary" id="btn-codes-save">코드 저장</button></div>
+    </section>
+
   </main>
 </div>
 
@@ -422,13 +430,13 @@ const fbApp = initializeApp(firebaseConfig);
 const auth = getAuth(fbApp);
 const fdb = getFirestore(fbApp);
 
-const INCOME_TAX = [
+const DEFAULT_INCOME_TAX = [
   {category:'기타수입', item:'이월금'},
   {category:'고정수입', item:'조합비'},
   {category:'기타수입', item:'찬조수입'},
   {category:'기타수입', item:'결산이자'},
 ];
-const EXPENSE_TAX = [
+const DEFAULT_EXPENSE_TAX = [
   {category:'의무금', item:'노총인천본부'},
   {category:'의무금', item:'연합연맹'},
   {category:'의무금', item:'하역사'},
@@ -458,8 +466,20 @@ const EXPENSE_TAX = [
   {category:'기타', item:'예비비'},
   {category:'기타', item:'기타'},
 ];
-const BUDGET_INCOME = INCOME_TAX.filter(x=>x.item!=='이월금');
-const BUDGET_EXPENSE = EXPENSE_TAX.filter(x=>x.item!=='업무추진비');
+// 특수항목: 집계 로직(이월/업무추진비 분배)이 이름에 걸려있어 삭제·이름변경을 막아둠 (코드는 자유롭게 변경 가능)
+const SPECIAL_ITEMS = ['이월금','업무추진비','연대활동비','정책연구비','사업기획비','통신비'];
+
+function assignDefaultCodes(list, isIncome){
+  return list.map((x,i)=>({...x, code: isIncome ? String.fromCharCode(65+i) : String(i+1).padStart(2,'0')}));
+}
+let INCOME_TAX = assignDefaultCodes(DEFAULT_INCOME_TAX, true);
+let EXPENSE_TAX = assignDefaultCodes(DEFAULT_EXPENSE_TAX, false);
+let BUDGET_INCOME = [], BUDGET_EXPENSE = [];
+function recomputeBudgetLists(){
+  BUDGET_INCOME = INCOME_TAX.filter(x=>x.item!=='이월금');
+  BUDGET_EXPENSE = EXPENSE_TAX.filter(x=>x.item!=='업무추진비');
+}
+recomputeBudgetLists();
 
 const $ = s => document.querySelector(s);
 const fmt = n => (n||0).toLocaleString('ko-KR');
@@ -579,6 +599,66 @@ let editMode=false; let currentUser=null;
 
 function categoriesFor(type){ const tax = type==='수입'?INCOME_TAX:EXPENSE_TAX; return [...new Set(tax.map(x=>x.category))]; }
 function itemsFor(type,category){ const tax = type==='수입'?INCOME_TAX:EXPENSE_TAX; return tax.filter(x=>x.category===category).map(x=>x.item); }
+
+/* ---------- 코드관리 ---------- */
+function codeTableRows(list, which){
+  return list.map((x,i)=>{
+    const locked = SPECIAL_ITEMS.includes(x.item);
+    return `<tr>
+      <td><input type="text" data-code-idx="${i}" data-code-field="code" value="${x.code||''}" style="width:56px;" ${editMode?'':'disabled'}></td>
+      <td><input type="text" data-code-idx="${i}" data-code-field="category" value="${x.category||''}" ${editMode?'':'disabled'}></td>
+      <td><input type="text" data-code-idx="${i}" data-code-field="item" value="${x.item||''}" ${(locked||!editMode)?'disabled':''}></td>
+      <td>${locked?'<span class="cat-badge">특수항목</span>':`<button class="btn btn-danger btn-sm" data-edit-only onclick="removeCodeRow('${which}',${i})">삭제</button>`}</td>
+    </tr>`;
+  }).join('');
+}
+function renderCodeManager(){
+  const el = $('#codes-out'); if(!el) return;
+  el.innerHTML = `
+    <div class="section-title">수입 코드 (알파벳)</div>
+    <div class="table-wrap"><table><thead><tr><th style="width:70px;">코드</th><th>대분류</th><th>적요</th><th class="no-print">관리</th></tr></thead>
+    <tbody id="income-code-body">${codeTableRows(INCOME_TAX,'income')}</tbody></table></div>
+    <div class="btn-row no-print" style="margin:8px 0 4px;"><button class="btn btn-outline btn-sm" data-edit-only onclick="addCodeRow('income')">+ 수입 항목 추가</button></div>
+    <div class="section-title">지출 코드 (2자리 숫자)</div>
+    <div class="table-wrap"><table><thead><tr><th style="width:70px;">코드</th><th>대분류</th><th>적요</th><th class="no-print">관리</th></tr></thead>
+    <tbody id="expense-code-body">${codeTableRows(EXPENSE_TAX,'expense')}</tbody></table></div>
+    <div class="btn-row no-print" style="margin:8px 0 4px;"><button class="btn btn-outline btn-sm" data-edit-only onclick="addCodeRow('expense')">+ 지출 항목 추가</button></div>`;
+  document.querySelectorAll('#income-code-body [data-code-field]').forEach(inp=>{
+    inp.addEventListener('input', ()=>{ INCOME_TAX[Number(inp.dataset.codeIdx)][inp.dataset.codeField] = inp.value; });
+  });
+  document.querySelectorAll('#expense-code-body [data-code-field]').forEach(inp=>{
+    inp.addEventListener('input', ()=>{ EXPENSE_TAX[Number(inp.dataset.codeIdx)][inp.dataset.codeField] = inp.value; });
+  });
+  refreshLockUI();
+}
+window.addCodeRow = function(which){
+  if(!requireEdit()) return;
+  if(which==='income'){ INCOME_TAX = [...INCOME_TAX, {code:String.fromCharCode(65+INCOME_TAX.length), category:'', item:''}]; }
+  else { EXPENSE_TAX = [...EXPENSE_TAX, {code:String(EXPENSE_TAX.length+1).padStart(2,'0'), category:'', item:''}]; }
+  recomputeBudgetLists(); renderCodeManager();
+};
+window.removeCodeRow = function(which, idx){
+  if(!requireEdit()) return;
+  const target = which==='income' ? INCOME_TAX[idx] : EXPENSE_TAX[idx];
+  if(target && SPECIAL_ITEMS.includes(target.item)){ showToast('특수항목은 삭제할 수 없습니다.', true); return; }
+  if(which==='income') INCOME_TAX = INCOME_TAX.filter((_,i)=>i!==idx);
+  else EXPENSE_TAX = EXPENSE_TAX.filter((_,i)=>i!==idx);
+  recomputeBudgetLists(); renderCodeManager();
+};
+$('#btn-codes-save').addEventListener('click', async ()=>{
+  if(!requireEdit()) return;
+  const incCodes = INCOME_TAX.map(x=>String(x.code||'').toUpperCase());
+  const expCodes = EXPENSE_TAX.map(x=>String(x.code||''));
+  if(new Set(incCodes).size!==incCodes.length){ showToast('수입 코드가 중복되었습니다.', true); return; }
+  if(new Set(expCodes).size!==expCodes.length){ showToast('지출 코드가 중복되었습니다.', true); return; }
+  if(INCOME_TAX.some(x=>!x.category||!x.item) || EXPENSE_TAX.some(x=>!x.category||!x.item)){
+    showToast('대분류·적요가 비어있는 항목이 있습니다.', true); return;
+  }
+  try{
+    await setDoc(doc(fdb,'meta','taxonomy'), {income:INCOME_TAX, expense:EXPENSE_TAX});
+    showToast('코드가 저장되었습니다.');
+  }catch(e){ showToast('저장 실패: '+(e.message||e.code), true); }
+});
 
 /* ---------- Firebase 로그인 ---------- */
 function refreshLockUI(){
@@ -775,19 +855,57 @@ async function moveEntry(id, dir){
   }catch(e){ showToast('순서 변경 실패: '+(e.message||e.code), true); }
 }
 window.moveEntry = moveEntry;
-$('#btn-import').addEventListener('click', async ()=>{
-  if(!requireEdit()) return;
-  if(!db){ showToast('불러오기를 사용할 수 없습니다.', true); return; }
-  if(entries.length>0){
-    const ok = await customConfirm('이미 데이터가 있습니다. 기존 엑셀 장부('+SEED_ENTRIES.length+'건)를 추가로 불러올까요?', '엑셀 데이터 불러오기');
-    if(!ok) return;
+/* ---------- 엑셀파일 업로드 (우리 양식과 같은 파일 → 기존과 다른 내용만 축적) ---------- */
+async function parseOwnFormatFile(file){
+  const buf = await file.arrayBuffer();
+  const wb = XLSX.read(buf, {type:'array'});
+  const sheet = wb.Sheets[wb.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(sheet, {header:1, raw:false, defval:''});
+  const HEAD = {'일자':'date','구분':'type','계정과목':'category','적요':'item','출납방식':'method','금액':'amount','비고':'note'};
+  let headerIdx=-1, colMap=null;
+  for(let i=0;i<Math.min(rows.length,25);i++){
+    const row=(rows[i]||[]).map(c=>String(c||'').trim());
+    const map={};
+    row.forEach((cell,ci)=>{ if(HEAD[cell]!==undefined) map[HEAD[cell]]=ci; });
+    if(map.date!==undefined && map.type!==undefined && map.amount!==undefined){ headerIdx=i; colMap=map; break; }
   }
-  $('#btn-import').disabled=true; $('#btn-import').textContent='불러오는 중...';
+  if(headerIdx<0) return {error:'엑셀에서 일자·구분·금액 같은 헤더를 찾지 못했습니다. 우리 앱과 같은 열 이름(일자,구분,계정과목,적요,출납방식,금액,비고)을 쓰는 파일인지 확인해주세요.'};
+  const out=[];
+  for(let i=headerIdx+1;i<rows.length;i++){
+    const row=rows[i]; if(!row || row.every(c=>String(c).trim()==='')) continue;
+    const rawDate = String(row[colMap.date]||'').trim();
+    const dm = rawDate.match(/(\d{4})[.\-\/]?(\d{2})[.\-\/]?(\d{2})/);
+    if(!dm) continue;
+    const date = dm[1]+'-'+dm[2]+'-'+dm[3];
+    const type = String(row[colMap.type]||'').trim();
+    const category = colMap.category!==undefined ? String(row[colMap.category]||'').trim() : '';
+    const item = colMap.item!==undefined ? String(row[colMap.item]||'').trim() : '';
+    const method = colMap.method!==undefined ? String(row[colMap.method]||'').trim() : '';
+    const amount = Number(String(row[colMap.amount]||'0').replace(/[^0-9.\-]/g,''))||0;
+    const note = colMap.note!==undefined ? String(row[colMap.note]||'').trim() : '';
+    if(!date || (type!=='수입' && type!=='지출') || !amount) continue;
+    out.push({date,type,category,item,method,note,amount});
+  }
+  const keyOf = e => [e.date,e.type,e.category,e.item,e.amount,e.note].join('|');
+  const existingSet = new Set(entries.map(keyOf));
+  const fresh = out.filter(r=> !existingSet.has(keyOf(r)));
+  return {rows: fresh, total: out.length, skipped: out.length - fresh.length};
+}
+$('#btn-import').addEventListener('click', ()=>{ if(!requireEdit()) return; $('#excel-file').click(); });
+$('#excel-file').addEventListener('change', async (ev)=>{
+  const file = ev.target.files[0]; if(!file) return;
   try{
-    for(const r of SEED_ENTRIES){ await addDoc(collection(fdb,'entries'), {...r, ts:Date.now()}); }
-    showToast(SEED_ENTRIES.length+'건을 불러왔습니다.');
-  }catch(e){ showToast('불러오기 중 오류: '+(e.message||e.code), true); }
-  $('#btn-import').disabled=false; $('#btn-import').textContent='엑셀 데이터 불러오기';
+    const res = await parseOwnFormatFile(file);
+    if(res.error){ showToast(res.error, true); }
+    else if(!res.rows.length){
+      showToast('새로 추가할 내용이 없습니다.'+(res.skipped?` (기존과 동일한 ${res.skipped}건은 이미 있어서 제외)`:''));
+    } else {
+      const notice = `파일 ${res.total}건 중 기존 데이터와 다른 ${res.rows.length}건을 찾았어요.`
+        + (res.skipped?` (동일한 ${res.skipped}건은 자동 제외됨)`:'') + ' 확인 후 저장하세요.';
+      renderBankPreview(res.rows.map(r=>({...r, include:true})), notice);
+    }
+  }catch(e){ showToast('파일을 읽는 중 오류가 발생했습니다: '+e.message, true); }
+  ev.target.value='';
 });
 $('#btn-reset-all').addEventListener('click', async ()=>{
   if(!requireEdit()) return;
@@ -802,9 +920,25 @@ $('#btn-reset-all').addEventListener('click', async ()=>{
 
 /* ---------- 은행내역 업로드 ---------- */
 function guessTaxonomy(type, memo){
+  const raw = (memo||'').trim();
+  // 1순위: 코드 매칭 (수입=선행 알파벳 1글자, 지출=선행 숫자 2자리)
+  if(type==='수입'){
+    const mm = raw.match(/^([A-Za-z])\s*/);
+    if(mm){
+      const found = INCOME_TAX.find(x=>String(x.code||'').toUpperCase()===mm[1].toUpperCase());
+      if(found) return {category:found.category, item:found.item, note: raw.slice(mm[0].length).trim() || raw};
+    }
+  } else {
+    const mm = raw.match(/^(\d{2})\s*/);
+    if(mm){
+      const found = EXPENSE_TAX.find(x=>String(x.code||'')===mm[1]);
+      if(found) return {category:found.category, item:found.item, note: raw.slice(mm[0].length).trim() || raw};
+    }
+  }
+  // 2순위: 기존처럼 적요 이름이 메모에 그대로 포함되어 있는지 텍스트 매칭
   const tax = type==='수입'?INCOME_TAX:EXPENSE_TAX;
-  const m = (memo||'').replace(/\s/g,'');
-  for(const t of tax){ if(m.includes(t.item)) return t; }
+  const m = raw.replace(/\s/g,'');
+  for(const t of tax){ if(m.includes(t.item)) return {category:t.category, item:t.item, note:raw}; }
   return null;
 }
 async function parseBankFile(file){
@@ -846,15 +980,16 @@ async function parseBankFile(file){
       category: guess?guess.category:(type==='지출'?'기타':'기타수입'),
       item: guess?guess.item:(memo||'기타'),
       method: type==='수입'?'계좌입금':'계좌이체',
-      note: memo, include:true });
+      note: guess?guess.note:memo, include:true });
   }
   return {rows: out};
 }
 let bankPreviewRows=[];
-function renderBankPreview(rows){
+function renderBankPreview(rows, noticeText){
   bankPreviewRows = rows;
-  if(!rows.length){ $('#bank-preview').innerHTML='<div class="notice">인식된 거래 내역이 없습니다.</div>'; return; }
-  const html = `<div class="notice">은행 메모를 보고 계정과목·적요를 자동으로 맞춰봤습니다. 확인 후 필요하면 직접 고치고, 제외할 항목은 체크를 해제한 뒤 저장하세요.</div>
+  if(!rows.length){ $('#bank-preview').innerHTML='<div class="notice">추가할 내용이 없습니다.</div>'; return; }
+  const notice = noticeText || '은행 메모를 보고 계정과목·적요를 자동으로 맞춰봤습니다. 확인 후 필요하면 직접 고치고, 제외할 항목은 체크를 해제한 뒤 저장하세요.';
+  const html = `<div class="notice">${notice}</div>
   <div class="table-wrap"><table><thead><tr>
     <th class="chk-cell"><input type="checkbox" id="bp-all" checked></th><th>일자</th><th>구분</th><th>계정과목</th><th>적요</th><th class="num">금액</th><th>원본메모</th>
   </tr></thead><tbody>` + rows.map((r,i)=>`
@@ -1165,11 +1300,11 @@ function renderBudgetIndicator(){
 
 /* ---------- 렌더 전체 ---------- */
 function renderAll(){
-  renderDataTable(); renderSearch(); renderMonthly(); renderBudget(); renderAudit(); renderBudgetIndicator();
+  renderDataTable(); renderSearch(); renderMonthly(); renderBudget(); renderAudit(); renderBudgetIndicator(); renderCodeManager();
 }
 
 /* ---------- 초기화 ---------- */
-let unsubEntries=null, unsubBudget=null;
+let unsubEntries=null, unsubBudget=null, unsubTaxonomy=null;
 function attachListeners(){
   unsubEntries = onSnapshot(collection(fdb,'entries'), snap=>{
     entries = snap.docs.map(d=>({id:d.id, ...d.data()}));
@@ -1180,10 +1315,22 @@ function attachListeners(){
     budget = snap.exists() ? (snap.data().items||{}) : {};
     renderAll();
   }, err=>{ console.error('budget error', err); });
+
+  unsubTaxonomy = onSnapshot(doc(fdb,'meta','taxonomy'), snap=>{
+    if(snap.exists()){
+      const d = snap.data();
+      if(Array.isArray(d.income) && d.income.length) INCOME_TAX = d.income;
+      if(Array.isArray(d.expense) && d.expense.length) EXPENSE_TAX = d.expense;
+    } else if(editMode){
+      setDoc(doc(fdb,'meta','taxonomy'), {income:INCOME_TAX, expense:EXPENSE_TAX}).catch(()=>{});
+    }
+    recomputeBudgetLists(); renderAll(); renderCodeManager();
+  }, err=>{ console.error('taxonomy error', err); });
 }
 function detachListeners(){
   if(unsubEntries){ unsubEntries(); unsubEntries=null; }
   if(unsubBudget){ unsubBudget(); unsubBudget=null; }
+  if(unsubTaxonomy){ unsubTaxonomy(); unsubTaxonomy=null; }
   entries=[]; budget={};
 }
 async function init(){
