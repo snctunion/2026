@@ -707,14 +707,15 @@ function aggregateRange(start,end,isFiscalStart){
   const inRange = entries.filter(e=>e.date>=start && e.date<=end);
   const items={}; let incomeSum=0, expenseSum=0; const bizByMonth={};
   for(const e of inRange){
+    const itemName = String(e.item||'').trim();
     if(e.type==='수입'){
-      if(e.item==='이월금') continue;
-      incomeSum+=e.amount; items[e.item]=(items[e.item]||0)+e.amount;
+      if(itemName==='이월금') continue;
+      incomeSum+=e.amount; items[itemName]=(items[itemName]||0)+e.amount;
     } else {
       expenseSum+=e.amount;
-      if(e.item==='업무추진비'){
+      if(itemName==='업무추진비' && String(e.category||'').trim()==='유지비'){
         const mk=e.date.slice(0,7); bizByMonth[mk]=(bizByMonth[mk]||0)+e.amount;
-      } else { items[e.item]=(items[e.item]||0)+e.amount; }
+      } else { items[itemName]=(items[itemName]||0)+e.amount; }
     }
   }
   const bizSplit={'연대활동비':0,'정책연구비':0,'사업기획비':0,'통신비':0};
@@ -725,7 +726,7 @@ function aggregateRange(start,end,isFiscalStart){
 
   let carry=0;
   if(isFiscalStart){
-    carry = inRange.filter(e=>e.type==='수입'&&e.item==='이월금').reduce((s,e)=>s+e.amount,0);
+    carry = inRange.filter(e=>e.type==='수입'&&String(e.item||'').trim()==='이월금').reduce((s,e)=>s+e.amount,0);
   } else {
     const before = entries.filter(e=>e.date<start);
     carry = before.length ? before[before.length-1].balance : 0;
