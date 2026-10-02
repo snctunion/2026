@@ -610,6 +610,13 @@ function printBudgetTab(){
     <tbody>${exp.trs}<tr><td colspan="2"><b>지출 예산 합계</b></td><td class="num"><b>${fmt(exp.sum)}</b></td></tr></tbody></table>`;
   printHTML('예산안', html);
 }
+// onclick="..."는 전역(window) 스코프에서 실행되는데, 이 스크립트는 type="module"이라
+// 아래처럼 명시적으로 window에 연결해주지 않으면 버튼을 눌러도 아무 반응이 없습니다(콘솔에만 조용히 에러).
+window.printData = printData;
+window.printSearchTab = printSearchTab;
+window.printMonthlyTab = printMonthlyTab;
+window.printAuditTab = printAuditTab;
+window.printBudgetTab = printBudgetTab;
 
 let db=null; // Firestore 준비되면 true 취급용 플래그로 재사용 (기존 코드와의 호환을 위해 유지)
 let entries=[]; let budget={}; let editingId=null; let currentTab='input';
