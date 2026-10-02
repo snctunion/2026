@@ -532,9 +532,19 @@ async function customPrompt(message, defaultValue='', title='입력'){
 
 /* ---------- 인쇄 (새 창, 흑백/테두리만) ---------- */
 function printHTML(title, bodyHTML){
-  const w = window.open('', '_blank');
-  if(!w){ showToast('팝업이 차단되어 인쇄 창을 열 수 없습니다. 브라우저의 팝업 차단을 해제한 뒤 다시 시도해주세요.', true); return; }
-  const doc = `<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>${title}</title>
+  // 팝업 차단과 무관하게 동작하도록 새 창을 띄우지 않고, 같은 페이지 안의 숨김 iframe에 내용을 그려서 인쇄해요.
+  let iframe = document.getElementById('print-frame');
+  if(!iframe){
+    iframe = document.createElement('iframe');
+    iframe.id = 'print-frame';
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0'; iframe.style.bottom = '0';
+    iframe.style.width = '0'; iframe.style.height = '0';
+    iframe.style.border = '0'; iframe.style.visibility = 'hidden';
+    document.body.appendChild(iframe);
+  }
+  const titleLines = String(title).split('\n');
+  const doc = `<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>${titleLines[0]}</title>
   <style>
     *{box-sizing:border-box;}
     body{font-family:'Noto Sans KR', system-ui, sans-serif; color:#000; background:#fff; padding:30px; margin:0;}
@@ -552,12 +562,16 @@ function printHTML(title, bodyHTML){
     .stat .v{font-size:15px; font-weight:700;}
     @media print{ body{padding:14px;} }
   </style></head><body>
-  <h1>${title.split('\\n')[0]}</h1>
-  ${title.split('\\n').slice(1).map(s=>`<div class="sub">${s}</div>`).join('') || '<div class="sub"></div>'}
+  <h1>${titleLines[0]}</h1>
+  ${titleLines.slice(1).map(s=>`<div class="sub">${s}</div>`).join('') || '<div class="sub"></div>'}
   ${bodyHTML}
   </body></html>`;
-  w.document.open(); w.document.write(doc); w.document.close();
-  setTimeout(()=>{ try{ w.focus(); w.print(); }catch(e){} }, 350);
+  const idoc = iframe.contentWindow.document;
+  idoc.open(); idoc.write(doc); idoc.close();
+  setTimeout(()=>{
+    try{ iframe.contentWindow.focus(); iframe.contentWindow.print(); }
+    catch(e){ showToast('인쇄 중 오류가 발생했습니다: '+e.message, true); }
+  }, 300);
 }
 function stripActionCol(html){
   return html.replace(/<th class="no-print">[\s\S]*?<\/th>/g,'').replace(/<td class="no-print">[\s\S]*?<\/td>/g,'');
