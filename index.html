@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>SNCT노동조합 금전출납부</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+CjxyZWN0IHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgcng9IjEzIiBmaWxsPSIjNjAyRkFFIi8+Cjx0ZXh0IHg9IjMyIiB5PSIyOSIgZm9udC1mYW1pbHk9IkFyaWFsLCBIZWx2ZXRpY2EsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTUiIGZvbnQtd2VpZ2h0PSI4MDAiIGZpbGw9IiNmZmZmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGxldHRlci1zcGFjaW5nPSIwLjUiPlNOQ1Q8L3RleHQ+Cjx0ZXh0IHg9IjMyIiB5PSI0NiIgZm9udC1mYW1pbHk9IkFyaWFsLCBIZWx2ZXRpY2EsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTMiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiNmZmZmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGxldHRlci1zcGFjaW5nPSIwLjUiPlVOSU9OPC90ZXh0Pgo8L3N2Zz4=">
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+CjxyZWN0IHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgcng9IjEzIiBmaWxsPSIjNjAyRkFFIi8+Cjx0ZXh0IHg9IjMyIiB5PSIyOSIgZm9udC1mYW1pbHk9IkFyaWFsLCBIZWx2ZXRpY2EsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTUiIGZvbnQtd2VpZ2h0PSI4MDAiIGZpbGw9IiNmZmZmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGxldHRlci1zcGFjaW5nPSIwLjUiPlNOQ1Q8L3RleHQ+Cjx0ZXh0IHg9IjMyIiB5PSI0NiIgZm9udC1mYW1pbHk9IkFyaWFsLCBIZWx2ZXRpY2EsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTMiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiNmZmZmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGxldHRlci1zcGFjaW5nPSIwLjUiPlVOSU9OPC90ZXh0Pgo8L3N2Zz4=">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -546,21 +548,24 @@ function printHTML(title, bodyHTML){
   const titleLines = String(title).split('\n');
   const doc = `<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>${titleLines[0]}</title>
   <style>
+    @page{ size: A4 portrait; margin: 10mm; }
     *{box-sizing:border-box;}
-    body{font-family:'Noto Sans KR', system-ui, sans-serif; color:#000; background:#fff; padding:30px; margin:0;}
-    h1{font-size:24px; font-weight:800; margin:0 0 6px; }
-    .sub{font-size:12.5px; color:#333; margin-bottom:18px; border-bottom:2px solid #000; padding-bottom:14px;}
-    h2{font-size:15px; font-weight:700; margin:20px 0 8px;}
-    table{width:100%; border-collapse:collapse; font-size:12.5px; margin-bottom:16px;}
-    th,td{border:1px solid #000; padding:6px 8px; text-align:left; background:#fff; color:#000;}
+    body{font-family:'Noto Sans KR', system-ui, sans-serif; color:#000; background:#fff; padding:0; margin:0; font-size:10px; line-height:1.25;}
+    h1{font-size:19px; font-weight:800; margin:0 0 4px;}
+    .sub{font-size:10.5px; color:#222; margin-bottom:3px;}
+    .sub:last-of-type{margin-bottom:10px; padding-bottom:8px; border-bottom:2px solid #000;}
+    h2{font-size:12.5px; font-weight:700; margin:10px 0 4px;}
+    table{width:100%; border-collapse:collapse; font-size:10px; margin-bottom:8px; line-height:1.2;}
+    th,td{border:1px solid #000; padding:2.5px 5px; text-align:left; background:#fff; color:#000;}
     th{font-weight:700;}
     .num{text-align:right;}
-    .stat-row{display:flex; flex-wrap:wrap; gap:0; margin-bottom:16px; border:1px solid #000;}
-    .stat{flex:1 1 140px; padding:10px 12px; border-right:1px solid #000;}
+    .two-col{display:flex; gap:8px; align-items:flex-start;}
+    .two-col table{flex:1 1 0; min-width:0;}
+    .stat-row{display:flex; flex-wrap:nowrap; gap:0; margin-bottom:10px; border:1px solid #000;}
+    .stat{flex:1 1 0; min-width:0; padding:4px 5px; border-right:1px solid #000;}
     .stat:last-child{border-right:none;}
-    .stat .l{font-size:11px; color:#333;}
-    .stat .v{font-size:15px; font-weight:700;}
-    @media print{ body{padding:14px;} }
+    .stat .l{font-size:10px; color:#222; white-space:nowrap;}
+    .stat .v{font-size:12px; font-weight:700; white-space:nowrap;}
   </style></head><body>
   <h1>${titleLines[0]}</h1>
   ${titleLines.slice(1).map(s=>`<div class="sub">${s}</div>`).join('') || '<div class="sub"></div>'}
@@ -576,38 +581,93 @@ function printHTML(title, bodyHTML){
 function stripActionCol(html){
   return html.replace(/<th class="no-print">[\s\S]*?<\/th>/g,'').replace(/<td class="no-print">[\s\S]*?<\/td>/g,'');
 }
+// 긴 목록을 2단으로 나눠서(같은 헤더를 양쪽에 반복) 세로 길이를 절반으로 줄임
+function splitTwoCol(rowsArr, headerHtml){
+  if(rowsArr.length<=8) return `<table><thead>${headerHtml}</thead><tbody>${rowsArr.join('')}</tbody></table>`;
+  const half = Math.ceil(rowsArr.length/2);
+  const left = rowsArr.slice(0,half).join('');
+  const right = rowsArr.slice(half).join('');
+  return `<div class="two-col">
+    <table><thead>${headerHtml}</thead><tbody>${left}</tbody></table>
+    <table><thead>${headerHtml}</thead><tbody>${right}</tbody></table>
+  </div>`;
+}
 function printData(){ printHTML('금전출납부 - 전체 데이터', stripActionCol($('#data-table').innerHTML)); }
 function printSearchTab(){
   printHTML('금전출납부 - 검색 결과', $('#search-stats').outerHTML.replace('id="search-stats"','') + $('#search-table').innerHTML);
 }
 function printMonthlyTab(){
-  const year=$('#m-year').value, month=$('#m-month').value;
-  printHTML(year+'년 '+month+'월 월간내역', $('#monthly-out').innerHTML);
+  const year=Number($('#m-year').value), month=Number($('#m-month').value);
+  const isFiscalStart = month===6;
+  const start = year+'-'+pad2(month)+'-01';
+  const lastDay = new Date(year, month, 0).getDate();
+  const end = year+'-'+pad2(month)+'-'+pad2(lastDay);
+  const r = aggregateRange(start,end,isFiscalStart);
+  const statHtml = `<div class="stat-row">
+    <div class="stat"><div class="l">이월금</div><div class="v">${fmt(r.carry)}</div></div>
+    <div class="stat"><div class="l">순수입합계</div><div class="v">${fmt(r.incomeSum)}</div></div>
+    <div class="stat"><div class="l">지출총계</div><div class="v">${fmt(r.expenseSum)}</div></div>
+    <div class="stat"><div class="l">월출납잔액</div><div class="v">${fmt(r.incomeSum-r.expenseSum)}</div></div>
+    <div class="stat"><div class="l">월말 총잔액</div><div class="v">${fmt(r.closing)}</div></div>
+  </div>`;
+  const header = `<tr><th>대분류</th><th>항목</th><th class="num">금액</th></tr>`;
+  const incRows = BUDGET_INCOME.map(({category,item})=>`<tr><td>${category}</td><td>${item}</td><td class="num">${fmt(r.items[item]||0)}</td></tr>`);
+  const expRows = BUDGET_EXPENSE.map(({category,item})=>`<tr><td>${category}</td><td>${item}</td><td class="num">${fmt(r.items[item]||0)}</td></tr>`);
+  const html = statHtml
+    + `<h2>수입 내역</h2>` + splitTwoCol(incRows, header)
+    + `<h2>지출 내역</h2>` + splitTwoCol(expRows, header);
+  printHTML(year+'년 '+month+'월 월간내역', html);
 }
 function printAuditTab(){
   const title = $('#audit-out').dataset.printTitle || '회계감사';
-  printHTML(title, stripActionCol($('#audit-out').innerHTML.replace(/<input[^>]*>/g,(m)=>{
-    const vMatch = m.match(/value="([^"]*)"/); const dis = m.includes('disabled');
-    return `<span>${vMatch?vMatch[1]:''}</span>`;
-  }).replace(/<textarea[^>]*>([\s\S]*?)<\/textarea>/g,'<span>$1</span>')));
+  const year=Number($('#a-year').value), q=$('#a-quarter').value;
+  const {start,end,isFiscalStart} = getQuarterRange(year,q);
+  const r = aggregateRange(start,end,isFiscalStart);
+  const statHtml = `<div class="stat-row">
+    <div class="stat"><div class="l">기간시작 이월금</div><div class="v">${fmt(r.carry)}</div></div>
+    <div class="stat"><div class="l">순수입합계</div><div class="v">${fmt(r.incomeSum)}</div></div>
+    <div class="stat"><div class="l">지출총계</div><div class="v">${fmt(r.expenseSum)}</div></div>
+    <div class="stat"><div class="l">출납잔액</div><div class="v">${fmt(r.incomeSum-r.expenseSum)}</div></div>
+    <div class="stat"><div class="l">기간말 총잔액</div><div class="v">${fmt(r.closing)}</div></div>
+  </div>`;
+  const diff = (currentAudit.actualBalance||0) - r.closing;
+  const balanceHtml = `<table><thead><tr><th>장부상 기간말잔액</th><th>실제잔액(통장)</th><th>차액</th><th>확인결과</th></tr></thead>
+    <tbody><tr><td class="num">${fmt(r.closing)}</td><td class="num">${fmt(currentAudit.actualBalance||0)}</td><td class="num">${fmt(diff)}</td><td>${diff===0?'일치':'불일치'}</td></tr></tbody></table>`;
+  const detailHeader = `<tr><th>상위분류</th><th>항목</th><th class="num">기간합계</th><th class="num">연간예산</th><th class="num">사용률</th><th class="num">잔액</th></tr>`;
+  const rowOf = ({category,item}) => {
+    const q2 = r.items[item]||0; const b = budget[item]||0;
+    const rate = b===0 ? '-' : (q2/b*100).toFixed(1)+'%';
+    return `<tr><td>${category}</td><td>${item}</td><td class="num">${fmt(q2)}</td><td class="num">${fmt(b)}</td><td class="num">${rate}</td><td class="num">${fmt(b-q2)}</td></tr>`;
+  };
+  const incRows = BUDGET_INCOME.map(rowOf);
+  const expRows = BUDGET_EXPENSE.map(rowOf);
+  const opinionHtml = `<table><tbody>
+    <tr><td style="width:18%;"><b>감사일자</b></td><td>${currentAudit.auditDate||''}</td><td style="width:18%;"><b>감사자</b></td><td>${currentAudit.auditor||''}</td></tr>
+    <tr><td><b>감사의견</b></td><td colspan="3">${(currentAudit.opinion||'').replace(/\n/g,'<br>')}</td></tr>
+  </tbody></table>`;
+  const html = statHtml
+    + `<h2>장부잔액 vs 실제잔액 대조</h2>` + balanceHtml
+    + `<h2>수입 세부 분석</h2>` + splitTwoCol(incRows, detailHeader)
+    + `<h2>지출 세부 분석</h2>` + splitTwoCol(expRows, detailHeader)
+    + `<h2>감사 의견</h2>` + opinionHtml;
+  printHTML(title, html);
 }
 function printBudgetTab(){
-  const build = list => {
-    let sum=0;
-    const trs = list.map(({category,item})=>{
-      const v = budget[item]||0; sum+=v;
-      return `<tr><td>${category}</td><td>${item}</td><td class="num">${fmt(v)}</td></tr>`;
-    }).join('');
-    return {trs, sum};
-  };
-  const inc = build(BUDGET_INCOME), exp = build(BUDGET_EXPENSE);
-  const html = `
-    <h2>수입 예산</h2>
-    <table><thead><tr><th>대분류</th><th>항목</th><th class="num">연간예산(원)</th></tr></thead>
-    <tbody>${inc.trs}<tr><td colspan="2"><b>수입 예산 합계</b></td><td class="num"><b>${fmt(inc.sum)}</b></td></tr></tbody></table>
-    <h2>지출 예산</h2>
-    <table><thead><tr><th>대분류</th><th>항목</th><th class="num">연간예산(원)</th></tr></thead>
-    <tbody>${exp.trs}<tr><td colspan="2"><b>지출 예산 합계</b></td><td class="num"><b>${fmt(exp.sum)}</b></td></tr></tbody></table>`;
+  const {start,end} = currentFiscalRange();
+  const r = aggregateRange(start,end,true);
+  const incomeBudgetSum = BUDGET_INCOME.reduce((s,{item})=>s+(budget[item]||0),0);
+  const expenseBudgetSum = BUDGET_EXPENSE.reduce((s,{item})=>s+(budget[item]||0),0);
+  const statHtml = `<div class="stat-row">
+    <div class="stat"><div class="l">작년도 이월금</div><div class="v">${fmt(r.carry)}</div></div>
+    <div class="stat"><div class="l">수입예산합계</div><div class="v">${fmt(incomeBudgetSum)}</div></div>
+    <div class="stat"><div class="l">지출예산합계</div><div class="v">${fmt(expenseBudgetSum)}</div></div>
+  </div>`;
+  const header = `<tr><th>대분류</th><th>항목</th><th class="num">연간예산(원)</th></tr>`;
+  const incRows = BUDGET_INCOME.map(({category,item})=>`<tr><td>${category}</td><td>${item}</td><td class="num">${fmt(budget[item]||0)}</td></tr>`);
+  const expRows = BUDGET_EXPENSE.map(({category,item})=>`<tr><td>${category}</td><td>${item}</td><td class="num">${fmt(budget[item]||0)}</td></tr>`);
+  const html = statHtml
+    + `<h2>수입 예산</h2>` + splitTwoCol(incRows, header)
+    + `<h2>지출 예산</h2>` + splitTwoCol(expRows, header);
   printHTML('예산안', html);
 }
 // onclick="..."는 전역(window) 스코프에서 실행되는데, 이 스크립트는 type="module"이라
