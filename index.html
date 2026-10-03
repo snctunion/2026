@@ -392,7 +392,10 @@ tbody tr:hover td{background:#F2E8FA;}
     <section id="tab-codes" class="tab-panel">
       <div class="panel-head"><h2>적요 코드관리</h2><p>수입은 알파벳(A,B,C…), 지출은 2자리 숫자(01,02…) 코드예요. 은행 메모 맨 앞에 이 코드를 적으면 업로드 시 자동 인식돼요. 이월금·업무추진비 관련 특수항목은 이름은 못 바꾸지만 코드는 바꿀 수 있어요.</p></div>
       <div id="codes-out"></div>
-      <div class="btn-row no-print" style="margin-top:6px;"><button class="btn btn-primary" id="btn-codes-save">코드 저장</button></div>
+      <div class="btn-row no-print" style="margin-top:6px;">
+        <button class="btn btn-primary" id="btn-codes-save">코드 저장</button>
+        <button class="btn btn-outline" onclick="printCodesTab()">인쇄</button>
+      </div>
     </section>
 
   </main>
@@ -550,22 +553,24 @@ function printHTML(title, bodyHTML){
   <style>
     @page{ size: A4 portrait; margin: 10mm; }
     *{box-sizing:border-box;}
-    body{font-family:'Noto Sans KR', system-ui, sans-serif; color:#000; background:#fff; padding:0; margin:0; font-size:10px; line-height:1.25;}
-    h1{font-size:19px; font-weight:800; margin:0 0 4px;}
-    .sub{font-size:10.5px; color:#222; margin-bottom:3px;}
-    .sub:last-of-type{margin-bottom:10px; padding-bottom:8px; border-bottom:2px solid #000;}
-    h2{font-size:12.5px; font-weight:700; margin:10px 0 4px;}
-    table{width:100%; border-collapse:collapse; font-size:10px; margin-bottom:8px; line-height:1.2;}
-    th,td{border:1px solid #000; padding:2.5px 5px; text-align:left; background:#fff; color:#000;}
+    body{font-family:'Noto Sans KR', system-ui, sans-serif; color:#000; background:#fff; padding:0; margin:0; font-size:10px; line-height:1.15;}
+    h1{font-size:18px; font-weight:800; margin:0 0 3px;}
+    .sub{font-size:10px; color:#222; margin-bottom:2px;}
+    .sub:last-of-type{margin-bottom:7px; padding-bottom:5px; border-bottom:2px solid #000;}
+    h2{font-size:11.5px; font-weight:700; margin:6px 0 2px;}
+    table{width:100%; border-collapse:collapse; font-size:10px; margin-bottom:4px; line-height:1.1;}
+    th,td{border:1px solid #000; padding:1.5px 5px; text-align:left; background:#fff; color:#000;}
     th{font-weight:700;}
     .num{text-align:right;}
     .two-col{display:flex; gap:8px; align-items:flex-start;}
     .two-col table{flex:1 1 0; min-width:0;}
-    .stat-row{display:flex; flex-wrap:nowrap; gap:0; margin-bottom:10px; border:1px solid #000;}
-    .stat{flex:1 1 0; min-width:0; padding:4px 5px; border-right:1px solid #000;}
+    .stat-row{display:flex; flex-wrap:nowrap; gap:0; margin-bottom:6px; border:1px solid #000;}
+    .stat{flex:1 1 0; min-width:0; padding:3px 5px; border-right:1px solid #000;}
     .stat:last-child{border-right:none;}
     .stat .l{font-size:10px; color:#222; white-space:nowrap;}
-    .stat .v{font-size:12px; font-weight:700; white-space:nowrap;}
+    .stat .v{font-size:11.5px; font-weight:700; white-space:nowrap;}
+    .opinion-head{border:1px solid #000; padding:3px 6px; margin-bottom:3px; display:flex; gap:18px; font-size:10px;}
+    .opinion-box{border:1px solid #000; padding:4px 6px; min-height:70px; font-size:10px; white-space:pre-wrap;}
   </style></head><body>
   <h1>${titleLines[0]}</h1>
   ${titleLines.slice(1).map(s=>`<div class="sub">${s}</div>`).join('') || '<div class="sub"></div>'}
@@ -581,16 +586,8 @@ function printHTML(title, bodyHTML){
 function stripActionCol(html){
   return html.replace(/<th class="no-print">[\s\S]*?<\/th>/g,'').replace(/<td class="no-print">[\s\S]*?<\/td>/g,'');
 }
-// 긴 목록을 2단으로 나눠서(같은 헤더를 양쪽에 반복) 세로 길이를 절반으로 줄임
-function splitTwoCol(rowsArr, headerHtml){
-  if(rowsArr.length<=8) return `<table><thead>${headerHtml}</thead><tbody>${rowsArr.join('')}</tbody></table>`;
-  const half = Math.ceil(rowsArr.length/2);
-  const left = rowsArr.slice(0,half).join('');
-  const right = rowsArr.slice(half).join('');
-  return `<div class="two-col">
-    <table><thead>${headerHtml}</thead><tbody>${left}</tbody></table>
-    <table><thead>${headerHtml}</thead><tbody>${right}</tbody></table>
-  </div>`;
+function singleTable(rowsArr, headerHtml){
+  return `<table><thead>${headerHtml}</thead><tbody>${rowsArr.join('')}</tbody></table>`;
 }
 function printData(){ printHTML('금전출납부 - 전체 데이터', stripActionCol($('#data-table').innerHTML)); }
 function printSearchTab(){
@@ -614,8 +611,8 @@ function printMonthlyTab(){
   const incRows = BUDGET_INCOME.map(({category,item})=>`<tr><td>${category}</td><td>${item}</td><td class="num">${fmt(r.items[item]||0)}</td></tr>`);
   const expRows = BUDGET_EXPENSE.map(({category,item})=>`<tr><td>${category}</td><td>${item}</td><td class="num">${fmt(r.items[item]||0)}</td></tr>`);
   const html = statHtml
-    + `<h2>수입 내역</h2>` + splitTwoCol(incRows, header)
-    + `<h2>지출 내역</h2>` + splitTwoCol(expRows, header);
+    + `<h2>수입 내역</h2>` + singleTable(incRows, header)
+    + `<h2>지출 내역</h2>` + singleTable(expRows, header);
   printHTML(year+'년 '+month+'월 월간내역', html);
 }
 function printAuditTab(){
@@ -630,9 +627,6 @@ function printAuditTab(){
     <div class="stat"><div class="l">출납잔액</div><div class="v">${fmt(r.incomeSum-r.expenseSum)}</div></div>
     <div class="stat"><div class="l">기간말 총잔액</div><div class="v">${fmt(r.closing)}</div></div>
   </div>`;
-  const diff = (currentAudit.actualBalance||0) - r.closing;
-  const balanceHtml = `<table><thead><tr><th>장부상 기간말잔액</th><th>실제잔액(통장)</th><th>차액</th><th>확인결과</th></tr></thead>
-    <tbody><tr><td class="num">${fmt(r.closing)}</td><td class="num">${fmt(currentAudit.actualBalance||0)}</td><td class="num">${fmt(diff)}</td><td>${diff===0?'일치':'불일치'}</td></tr></tbody></table>`;
   const detailHeader = `<tr><th>상위분류</th><th>항목</th><th class="num">기간합계</th><th class="num">연간예산</th><th class="num">사용률</th><th class="num">잔액</th></tr>`;
   const rowOf = ({category,item}) => {
     const q2 = r.items[item]||0; const b = budget[item]||0;
@@ -641,14 +635,11 @@ function printAuditTab(){
   };
   const incRows = BUDGET_INCOME.map(rowOf);
   const expRows = BUDGET_EXPENSE.map(rowOf);
-  const opinionHtml = `<table><tbody>
-    <tr><td style="width:18%;"><b>감사일자</b></td><td>${currentAudit.auditDate||''}</td><td style="width:18%;"><b>감사자</b></td><td>${currentAudit.auditor||''}</td></tr>
-    <tr><td><b>감사의견</b></td><td colspan="3">${(currentAudit.opinion||'').replace(/\n/g,'<br>')}</td></tr>
-  </tbody></table>`;
+  const opinionHtml = `<div class="opinion-head"><div><b>감사일자</b> ${currentAudit.auditDate||''}</div><div><b>감사자</b> ${currentAudit.auditor||''}</div></div>
+    <div class="opinion-box">${(currentAudit.opinion||'').replace(/</g,'&lt;')}</div>`;
   const html = statHtml
-    + `<h2>장부잔액 vs 실제잔액 대조</h2>` + balanceHtml
-    + `<h2>수입 세부 분석</h2>` + splitTwoCol(incRows, detailHeader)
-    + `<h2>지출 세부 분석</h2>` + splitTwoCol(expRows, detailHeader)
+    + `<h2>수입 세부 분석</h2>` + singleTable(incRows, detailHeader)
+    + `<h2>지출 세부 분석</h2>` + singleTable(expRows, detailHeader)
     + `<h2>감사 의견</h2>` + opinionHtml;
   printHTML(title, html);
 }
@@ -666,9 +657,21 @@ function printBudgetTab(){
   const incRows = BUDGET_INCOME.map(({category,item})=>`<tr><td>${category}</td><td>${item}</td><td class="num">${fmt(budget[item]||0)}</td></tr>`);
   const expRows = BUDGET_EXPENSE.map(({category,item})=>`<tr><td>${category}</td><td>${item}</td><td class="num">${fmt(budget[item]||0)}</td></tr>`);
   const html = statHtml
-    + `<h2>수입 예산</h2>` + splitTwoCol(incRows, header)
-    + `<h2>지출 예산</h2>` + splitTwoCol(expRows, header);
+    + `<h2>수입 예산</h2>` + singleTable(incRows, header)
+    + `<h2>지출 예산</h2>` + singleTable(expRows, header);
   printHTML('예산안', html);
+}
+function printCodesTab(){
+  const incHeader = `<tr><th>코드</th><th>대분류</th><th>적요</th></tr>`;
+  const expHeader = incHeader;
+  const metHeader = `<tr><th>코드</th><th>출납방식</th></tr>`;
+  const incRows = INCOME_TAX.map(x=>`<tr><td>${x.code||''}</td><td>${x.category||''}</td><td>${x.item||''}</td></tr>`);
+  const expRows = EXPENSE_TAX.map(x=>`<tr><td>${x.code||''}</td><td>${x.category||''}</td><td>${x.item||''}</td></tr>`);
+  const metRows = METHOD_TAX.map(x=>`<tr><td>${x.code||''}</td><td>${x.item||''}</td></tr>`);
+  const html = `<h2>수입 코드</h2>` + singleTable(incRows, incHeader)
+    + `<h2>지출 코드</h2>` + singleTable(expRows, expHeader)
+    + `<h2>출납방식 코드</h2>` + singleTable(metRows, metHeader);
+  printHTML('적요 코드표', html);
 }
 // onclick="..."는 전역(window) 스코프에서 실행되는데, 이 스크립트는 type="module"이라
 // 아래처럼 명시적으로 window에 연결해주지 않으면 버튼을 눌러도 아무 반응이 없습니다(콘솔에만 조용히 에러).
@@ -676,6 +679,7 @@ window.printData = printData;
 window.printSearchTab = printSearchTab;
 window.printMonthlyTab = printMonthlyTab;
 window.printAuditTab = printAuditTab;
+window.printCodesTab = printCodesTab;
 window.printBudgetTab = printBudgetTab;
 
 let db=null; // Firestore 준비되면 true 취급용 플래그로 재사용 (기존 코드와의 호환을 위해 유지)
