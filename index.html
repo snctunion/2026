@@ -549,11 +549,14 @@ function printHTML(title, bodyHTML){
     document.body.appendChild(iframe);
   }
   const titleLines = String(title).split('\n');
+  const MARGIN_MM = 12; // 위/좌/우/아래 동일한 여백
   const doc = `<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>${titleLines[0]}</title>
   <style>
-    @page{ size: A4 portrait; margin: 10mm; }
+    @page{ size: A4 portrait; margin: ${MARGIN_MM}mm; }
     *{box-sizing:border-box;}
-    body{font-family:'Noto Sans KR', system-ui, sans-serif; color:#000; background:#fff; padding:0; margin:0; font-size:10px; line-height:1.15;}
+    html,body{margin:0; padding:0;}
+    body{font-family:'Noto Sans KR', system-ui, sans-serif; color:#000; background:#fff; font-size:10px; line-height:1.15;}
+    #print-root{transform-origin: top left;}
     h1{font-size:18px; font-weight:800; margin:0 0 3px;}
     .sub{font-size:10px; color:#222; margin-bottom:2px;}
     .sub:last-of-type{margin-bottom:7px; padding-bottom:5px; border-bottom:2px solid #000;}
@@ -572,13 +575,31 @@ function printHTML(title, bodyHTML){
     .opinion-head{border:1px solid #000; padding:3px 6px; margin-bottom:3px; display:flex; gap:18px; font-size:10px;}
     .opinion-box{border:1px solid #000; padding:4px 6px; min-height:70px; font-size:10px; white-space:pre-wrap;}
   </style></head><body>
+  <div id="print-root">
   <h1>${titleLines[0]}</h1>
   ${titleLines.slice(1).map(s=>`<div class="sub">${s}</div>`).join('') || '<div class="sub"></div>'}
   ${bodyHTML}
+  </div>
   </body></html>`;
   const idoc = iframe.contentWindow.document;
   idoc.open(); idoc.write(doc); idoc.close();
   setTimeout(()=>{
+    try{
+      const root = idoc.getElementById('print-root');
+      if(root){
+        const PX_PER_MM = 96/25.4;
+        const pageHeightPx = 297*PX_PER_MM;
+        const pageWidthPx = 210*PX_PER_MM;
+        const availH = pageHeightPx - 2*MARGIN_MM*PX_PER_MM;
+        const availW = pageWidthPx - 2*MARGIN_MM*PX_PER_MM;
+        const actualH = root.scrollHeight;
+        const actualW = root.scrollWidth || availW;
+        let scale = Math.min(availH/actualH, availW/actualW);
+        if(!isFinite(scale) || scale<=0) scale = 1;
+        scale = Math.max(0.55, Math.min(scale, 2.6));
+        root.style.zoom = scale;
+      }
+    }catch(e){ /* 확대/축소 실패해도 인쇄는 계속 진행 */ }
     try{ iframe.contentWindow.focus(); iframe.contentWindow.print(); }
     catch(e){ showToast('인쇄 중 오류가 발생했습니다: '+e.message, true); }
   }, 300);
@@ -803,7 +824,7 @@ function switchTab(tab){
 document.querySelectorAll('.navbtn').forEach(b=> b.addEventListener('click',()=>switchTab(b.dataset.tab)) );
 
 function computeBalances(){
-  entries.sort((a,b)=> a.date===b.date ? (a.ts-b.ts) : a.date.localeCompare(b.date));
+  entries.sort((a,b)=> a.date===b.date ? ((a.ts||0)-(b.ts||0)) : a.date.localeCompare(b.date));
   let bal=0;
   for(const e of entries){ bal += (e.type==='수입'? e.amount : -e.amount); e.balance = bal; }
 }
@@ -932,7 +953,7 @@ window.startEdit=startEdit; window.deleteEntry=deleteEntry;
 function renderDataTable(){
   const el = $('#data-table');
   if(!entries.length){ el.innerHTML='<div class="empty">아직 입력된 내역이 없습니다. 위 버튼으로 기존 장부를 가져오거나 입력 탭에서 추가하세요.</div>'; return; }
-  const rows = [...entries].sort((a,b)=> b.date===a.date ? (b.ts-a.ts) : b.date.localeCompare(a.date));
+  const rows = [...entries].sort((a,b)=> b.date===a.date ? ((b.ts||0)-(a.ts||0)) : b.date.localeCompare(a.date));
   const actionCell = (e,i) => {
     if(!editMode) return `<span style="color:var(--ink-soft); font-size:12px;">로그인 후 편집</span>`;
     const sameDateAbove = rows[i-1] && rows[i-1].date===e.date;   // 화면상 바로 위 = ts가 더 큰(나중) 항목
@@ -956,15 +977,21 @@ function renderDataTable(){
 }
 async function moveEntry(id, dir){
   if(!requireEdit()) return;
-  const sameDate = entries.filter(x=>x.date===entries.find(y=>y.id===id).date).sort((a,b)=>a.ts-b.ts);
+  const target = entries.find(y=>y.id===id);
+  if(!target){ showToast('순서 변경 실패: 대상을 찾을 수 없습니다.', true); return; }
+  const sameDate = entries.filter(x=>x.date===target.date).sort((a,b)=>(a.ts||0)-(b.ts||0));
   const idx = sameDate.findIndex(x=>x.id===id);
+  if(idx<0){ showToast('순서 변경 실패: 대상을 찾을 수 없습니다.', true); return; }
   // dir=-1(화면에서 위로 이동)은 ts를 더 크게, dir=1(아래로)은 ts를 더 작게 하여 그 이웃과 순서를 맞바꿈
   const neighborIdx = dir===-1 ? idx+1 : idx-1;
-  if(neighborIdx<0 || neighborIdx>=sameDate.length) return;
+  if(neighborIdx<0 || neighborIdx>=sameDate.length){ showToast('더 이상 이동할 수 없습니다.', true); return; }
   const a = sameDate[idx], b = sameDate[neighborIdx];
+  const aTs = (typeof a.ts==='number') ? a.ts : Date.now();
+  const bTs = (typeof b.ts==='number') ? b.ts : Date.now()-1;
   try{
-    await updateDoc(doc(fdb,'entries',a.id), {ts:b.ts});
-    await updateDoc(doc(fdb,'entries',b.id), {ts:a.ts});
+    await updateDoc(doc(fdb,'entries',a.id), {ts:bTs});
+    await updateDoc(doc(fdb,'entries',b.id), {ts:aTs});
+    showToast('순서를 변경했습니다.');
   }catch(e){ showToast('순서 변경 실패: '+(e.message||e.code), true); }
 }
 window.moveEntry = moveEntry;
@@ -1036,24 +1063,26 @@ async function parseUploadFile(file){
     }
   }
 
-  // 2) 은행 거래내역 양식 탐지(거래일자/적요/입금액/출금액류) → 코드 인식
+  // 2) 은행 거래내역 양식 탐지(거래일자/적요·메모·비고류/입금액/출금액) → 코드 인식
+  //    적요·메모·비고·내통장표시 등 "텍스트 설명" 성격의 열은 하나만 쓰지 않고 전부 찾아서,
+  //    같은 행(=같은 거래 1건) 안에서만 코드와 비고 내용을 찾는다. 다른 행(다른 거래)끼리는 절대 섞지 않음.
   const DATE_KEYS=['거래일시','거래일자','거래일','날짜','일자'];
-  const MEMO_KEYS=['적요','내용','거래내용','메모'];
+  const MEMO_KEYS=['적요','내용','거래내용','메모','비고','내통장표시','통장표시','입금통장표시','출금통장표시','거래메모'];
   const IN_KEYS=['입금액','입금'];
   const OUT_KEYS=['출금액','출금'];
   let headerIdx=-1, colMap=null;
   for(let i=0;i<Math.min(rows.length,25);i++){
     const row=(rows[i]||[]).map(c=>String(c||'').trim());
-    let dC=-1,mC=-1,inC=-1,outC=-1;
+    let dC=-1,inC=-1,outC=-1; const memoCols=[];
     row.forEach((cell,ci)=>{
       if(dC<0 && DATE_KEYS.some(k=>cell.includes(k))) dC=ci;
-      if(mC<0 && MEMO_KEYS.some(k=>cell.includes(k))) mC=ci;
+      if(MEMO_KEYS.some(k=>cell.includes(k)) && !memoCols.includes(ci)) memoCols.push(ci);
       if(inC<0 && IN_KEYS.some(k=>cell.includes(k))) inC=ci;
       if(outC<0 && OUT_KEYS.some(k=>cell.includes(k))) outC=ci;
     });
-    if(dC>=0 && mC>=0 && (inC>=0||outC>=0)){ headerIdx=i; colMap={dC,mC,inC,outC}; break; }
+    if(dC>=0 && memoCols.length>0 && (inC>=0||outC>=0)){ headerIdx=i; colMap={dC,memoCols,inC,outC}; break; }
   }
-  if(headerIdx<0) return {error:'파일의 열 구성을 인식하지 못했습니다. 우리 양식(일자·구분·계정과목·적요·출납방식·금액·비고) 또는 은행 거래내역(거래일자·적요·입금액·출금액) 형식인지 확인해주세요.'};
+  if(headerIdx<0) return {error:'파일의 열 구성을 인식하지 못했습니다. 우리 양식(일자·구분·계정과목·적요·출납방식·금액·비고) 또는 은행 거래내역(거래일자·적요/메모/비고류·입금액·출금액) 형식인지 확인해주세요.'};
   const out=[];
   for(let i=headerIdx+1;i<rows.length;i++){
     const row=rows[i]; if(!row || row.every(c=>String(c).trim()==='')) continue;
@@ -1061,17 +1090,21 @@ async function parseUploadFile(file){
     const dm = rawDate.match(/(\d{4})[.\-\/]?(\d{2})[.\-\/]?(\d{2})/);
     if(!dm) continue;
     const date = dm[1]+'-'+dm[2]+'-'+dm[3];
-    const memo = String(row[colMap.mC]||'').trim();
+    // 이 행(이 거래 1건)의 적요/메모/비고류 열들만 모음 — 다른 행 내용과 절대 섞이지 않음
+    const memoTexts = colMap.memoCols.map(ci=>String(row[ci]||'').trim()).filter(Boolean);
     const inVal = colMap.inC>=0 ? (Number(String(row[colMap.inC]||'0').replace(/[^0-9.\-]/g,''))||0) : 0;
     const outVal = colMap.outC>=0 ? (Number(String(row[colMap.outC]||'0').replace(/[^0-9.\-]/g,''))||0) : 0;
     let type, amount;
     if(inVal>0){ type='수입'; amount=inVal; } else if(outVal>0){ type='지출'; amount=outVal; } else continue;
-    const guess = guessTaxonomy(type, memo);
+    // 이 행의 여러 텍스트열을 차례로 시도해서(코드 우선 → 이름 매칭) 제일 먼저 맞는 것을 채택
+    let guess=null;
+    for(const t of memoTexts){ guess = guessTaxonomy(type, t); if(guess) break; }
+    const fallbackNote = memoTexts.join(' ').trim();
     out.push({ date, type, amount,
       category: guess?guess.category:(type==='지출'?'기타':'기타수입'),
-      item: guess?guess.item:(memo||'기타'),
+      item: guess?guess.item:(fallbackNote||'기타'),
       method: (guess&&guess.method) ? guess.method : (type==='수입'?'계좌입금':'계좌이체'),
-      note: guess?guess.note:memo });
+      note: guess?guess.note:fallbackNote });
   }
   return dedupAgainstExisting(out, out.length+'건의 거래를 읽었습니다');
 }
@@ -1140,7 +1173,13 @@ function renderBankPreview(rows, noticeText){
     if(!chosen.length){ showToast('선택된 항목이 없습니다.', true); return; }
     $('#btn-bp-save').disabled=true; $('#btn-bp-save').textContent='저장 중...';
     try{
-      for(const r of chosen){ await addDoc(collection(fdb,'entries'), {date:r.date,type:r.type,category:r.category,item:r.item,method:r.method,amount:r.amount,note:r.note,ts:Date.now()}); }
+      // 같은 날짜 안에서는 "나중 거래(최신)가 맨 위" 규칙을 지키기 위해,
+      // 은행/엑셀 파일에 보통 최신 거래가 먼저 나오는 점을 반영해 파일상 앞쪽 행일수록 더 큰 ts를 부여함.
+      const baseTs = Date.now();
+      for(let i=0;i<chosen.length;i++){
+        const r = chosen[i];
+        await addDoc(collection(fdb,'entries'), {date:r.date,type:r.type,category:r.category,item:r.item,method:r.method,amount:r.amount,note:r.note,ts:baseTs-i});
+      }
       showToast(chosen.length+'건 저장되었습니다.');
       bankPreviewRows=[]; $('#bank-preview').innerHTML='';
     }catch(e){ showToast('저장 중 오류: '+(e.message||e.code), true); }
