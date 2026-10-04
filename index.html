@@ -105,6 +105,10 @@ th,td{padding:8px 9px; border-bottom:1px solid var(--line); text-align:left; whi
 th{background:var(--paper-dim); font-weight:600; color:var(--ink-soft); font-size:12px;}
 tbody tr:hover{background:var(--paper-dim);}
 .table-wrap{overflow-x:auto; border:1px solid var(--line); border-radius:var(--radius);}
+.drag-handle{cursor:grab; color:var(--ink-soft); font-size:13px; user-select:none; padding:0 4px; letter-spacing:-2px;}
+#data-tbody tr[draggable="true"]:active{cursor:grabbing;}
+#data-tbody tr.dragging{opacity:.4;}
+#data-tbody tr.drag-over{box-shadow:inset 0 2px 0 var(--pri), inset 0 -2px 0 var(--pri); background:var(--accent-light);}
 .num{text-align:right; font-variant-numeric:tabular-nums;}
 .tag{display:inline-block; padding:2px 8px; border-radius:999px; font-size:11.5px; font-weight:600;}
 .tag-income{background:var(--income-bg); color:var(--income);}
@@ -950,51 +954,79 @@ async function deleteEntry(id){
 window.startEdit=startEdit; window.deleteEntry=deleteEntry;
 
 /* ---------- 데이터 ---------- */
+let dragSourceId = null;
 function renderDataTable(){
   const el = $('#data-table');
   if(!entries.length){ el.innerHTML='<div class="empty">아직 입력된 내역이 없습니다. 위 버튼으로 기존 장부를 가져오거나 입력 탭에서 추가하세요.</div>'; return; }
   const rows = [...entries].sort((a,b)=> b.date===a.date ? ((b.ts||0)-(a.ts||0)) : b.date.localeCompare(a.date));
-  const actionCell = (e,i) => {
-    if(!editMode) return `<span style="color:var(--ink-soft); font-size:12px;">로그인 후 편집</span>`;
-    const sameDateAbove = rows[i-1] && rows[i-1].date===e.date;   // 화면상 바로 위 = ts가 더 큰(나중) 항목
-    const sameDateBelow = rows[i+1] && rows[i+1].date===e.date;
-    return `<button class="btn btn-outline btn-sm" onclick="startEdit('${e.id}')">수정</button>
-       <button class="btn btn-danger btn-sm" onclick="deleteEntry('${e.id}')">삭제</button>
-       ${sameDateAbove?`<button class="btn btn-outline btn-sm" title="같은 날짜 안에서 위로" onclick="moveEntry('${e.id}',-1)">▲</button>`:''}
-       ${sameDateBelow?`<button class="btn btn-outline btn-sm" title="같은 날짜 안에서 아래로" onclick="moveEntry('${e.id}',1)">▼</button>`:''}`;
-  };
+  const actionCell = e => editMode
+    ? `<button class="btn btn-outline btn-sm" onclick="startEdit('${e.id}')">수정</button>
+       <button class="btn btn-danger btn-sm" onclick="deleteEntry('${e.id}')">삭제</button>`
+    : `<span style="color:var(--ink-soft); font-size:12px;">로그인 후 편집</span>`;
+  const handleCell = e => editMode
+    ? `<span class="drag-handle" title="드래그해서 같은 날짜 안의 순서를 바꾸세요">⠿⠿</span>`
+    : '';
   el.innerHTML = `<div class="table-wrap"><table><thead><tr>
-    <th>일자</th><th>구분</th><th>계정과목</th><th>적요</th><th>출납방식</th><th class="num">금액</th><th class="num">잔액</th><th>비고</th><th class="no-print">관리</th>
-  </tr></thead><tbody>` + rows.map((e,i)=>`
-    <tr>
+    <th class="no-print"></th><th>일자</th><th>구분</th><th>계정과목</th><th>적요</th><th>출납방식</th><th class="num">금액</th><th class="num">잔액</th><th>비고</th><th class="no-print">관리</th>
+  </tr></thead><tbody id="data-tbody">` + rows.map((e)=>`
+    <tr draggable="${editMode?'true':'false'}" data-id="${e.id}" data-date="${e.date}">
+      <td class="no-print">${handleCell(e)}</td>
       <td>${e.date}</td>
       <td><span class="tag ${e.type==='수입'?'tag-income':'tag-expense'}">${e.type}</span></td>
       <td>${e.category}</td><td>${e.item}</td><td>${e.method||''}</td>
       <td class="num">${fmt(e.amount)}</td><td class="num">${fmt(e.balance)}</td><td>${e.note||''}</td>
-      <td class="no-print">${actionCell(e,i)}</td>
+      <td class="no-print">${actionCell(e)}</td>
     </tr>`).join('') + `</tbody></table></div>
-    <p style="font-size:12px; color:var(--ink-soft); margin-top:8px;">※ 같은 날짜 안의 순서는 ▲▼ 버튼으로 조정할 수 있어요. 다른 날짜로는 이동하지 않아요.</p>`;
+    <p style="font-size:12px; color:var(--ink-soft); margin-top:8px;">※ 왼쪽 ⠿⠿ 핸들을 드래그해서 같은 날짜 안의 순서를 바꿀 수 있어요. 다른 날짜로는 옮겨지지 않고, 확인창에서 "예"를 눌러야 실제로 저장돼요.</p>`;
+  wireDragHandlers();
 }
-async function moveEntry(id, dir){
+function wireDragHandlers(){
+  const tbody = $('#data-tbody'); if(!tbody) return;
+  tbody.querySelectorAll('tr').forEach(tr=>{
+    tr.addEventListener('dragstart', (ev)=>{
+      if(!editMode){ ev.preventDefault(); return; }
+      dragSourceId = tr.dataset.id;
+      ev.dataTransfer.effectAllowed = 'move';
+      try{ ev.dataTransfer.setData('text/plain', tr.dataset.id); }catch(e){}
+      tr.classList.add('dragging');
+    });
+    tr.addEventListener('dragend', ()=>{ tr.classList.remove('dragging'); tbody.querySelectorAll('tr').forEach(r=>r.classList.remove('drag-over')); });
+    tr.addEventListener('dragover', (ev)=>{
+      if(!dragSourceId) return;
+      if(tr.dataset.id===dragSourceId) return;
+      if(tr.dataset.date !== (entries.find(x=>x.id===dragSourceId)||{}).date) return; // 같은 날짜만 허용
+      ev.preventDefault();
+      tr.classList.add('drag-over');
+    });
+    tr.addEventListener('dragleave', ()=>{ tr.classList.remove('drag-over'); });
+    tr.addEventListener('drop', async (ev)=>{
+      ev.preventDefault();
+      tr.classList.remove('drag-over');
+      const targetId = tr.dataset.id;
+      const srcId = dragSourceId; dragSourceId=null;
+      if(!srcId || srcId===targetId) return;
+      await handleRowDrop(srcId, targetId);
+    });
+  });
+}
+async function handleRowDrop(srcId, targetId){
   if(!requireEdit()) return;
-  const target = entries.find(y=>y.id===id);
-  if(!target){ showToast('순서 변경 실패: 대상을 찾을 수 없습니다.', true); return; }
-  const sameDate = entries.filter(x=>x.date===target.date).sort((a,b)=>(a.ts||0)-(b.ts||0));
-  const idx = sameDate.findIndex(x=>x.id===id);
-  if(idx<0){ showToast('순서 변경 실패: 대상을 찾을 수 없습니다.', true); return; }
-  // dir=-1(화면에서 위로 이동)은 ts를 더 크게, dir=1(아래로)은 ts를 더 작게 하여 그 이웃과 순서를 맞바꿈
-  const neighborIdx = dir===-1 ? idx+1 : idx-1;
-  if(neighborIdx<0 || neighborIdx>=sameDate.length){ showToast('더 이상 이동할 수 없습니다.', true); return; }
-  const a = sameDate[idx], b = sameDate[neighborIdx];
-  const aTs = (typeof a.ts==='number') ? a.ts : Date.now();
-  const bTs = (typeof b.ts==='number') ? b.ts : Date.now()-1;
+  const src = entries.find(x=>x.id===srcId);
+  const tgt = entries.find(x=>x.id===targetId);
+  if(!src || !tgt){ showToast('대상을 찾을 수 없습니다.', true); return; }
+  if(src.date !== tgt.date){ showToast('같은 날짜 안에서만 순서를 바꿀 수 있습니다.', true); return; }
+  const ok = await customConfirm(`"${src.item}"(${fmt(src.amount)}원) 항목을 "${tgt.item}" 바로 위로 옮기시겠습니까?`, '순서 변경 확인');
+  if(!ok) return;
+  const displayOrder = entries.filter(x=>x.date===tgt.date && x.id!==src.id).sort((a,b)=>(b.ts||0)-(a.ts||0));
+  const idx = displayOrder.findIndex(x=>x.id===tgt.id);
+  const above = displayOrder[idx-1];
+  const tgtTs = (typeof tgt.ts==='number') ? tgt.ts : Date.now();
+  const newTs = above ? (((typeof above.ts==='number'?above.ts:tgtTs+2) + tgtTs) / 2) : (tgtTs + 1);
   try{
-    await updateDoc(doc(fdb,'entries',a.id), {ts:bTs});
-    await updateDoc(doc(fdb,'entries',b.id), {ts:aTs});
+    await updateDoc(doc(fdb,'entries',src.id), {ts:newTs});
     showToast('순서를 변경했습니다.');
   }catch(e){ showToast('순서 변경 실패: '+(e.message||e.code), true); }
 }
-window.moveEntry = moveEntry;
 /* ---------- 엑셀파일 업로드 (우리 양식과 같은 파일 → 기존과 다른 내용만 축적) ---------- */
 $('#btn-reset-all').addEventListener('click', async ()=>{
   if(!requireEdit()) return;
