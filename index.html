@@ -540,7 +540,8 @@ async function customPrompt(message, defaultValue='', title='입력'){
 }
 
 /* ---------- 인쇄 (새 창, 흑백/테두리만) ---------- */
-function printHTML(title, bodyHTML){
+function printHTML(title, bodyHTML, fitPage){
+  if(fitPage===undefined) fitPage = true; // 기본은 한 장에 맞춰 자동 축소/확대. 데이터처럼 양이 들쭉날쭉한 목록은 false로 호출.
   // 팝업 차단과 무관하게 동작하도록 새 창을 띄우지 않고, 같은 페이지 안의 숨김 iframe에 내용을 그려서 인쇄해요.
   let iframe = document.getElementById('print-frame');
   if(!iframe){
@@ -554,30 +555,31 @@ function printHTML(title, bodyHTML){
   }
   const titleLines = String(title).split('\n');
   const MARGIN_MM = 12; // 위/좌/우/아래 동일한 여백
+  const BASE_PX = 10; // 기준 글자크기(측정용) — 아래에서 실제 배율만큼 다시 계산해서 덮어씀
+  // 모든 치수를 em(=body font-size 기준 배수)으로 둬서, body의 font-size 하나만 바꾸면
+  // 글자·여백·줄높이가 전부 같은 비율로 같이 커지고 작아지도록 함 (zoom이 아닌 실제 레이아웃 속성이라 모든 브라우저에서 동작)
   const doc = `<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>${titleLines[0]}</title>
   <style>
     @page{ size: A4 portrait; margin: ${MARGIN_MM}mm; }
     *{box-sizing:border-box;}
     html,body{margin:0; padding:0;}
-    body{font-family:'Noto Sans KR', system-ui, sans-serif; color:#000; background:#fff; font-size:10px; line-height:1.15;}
-    #print-root{transform-origin: top left;}
-    h1{font-size:18px; font-weight:800; margin:0 0 3px;}
-    .sub{font-size:10px; color:#222; margin-bottom:2px;}
-    .sub:last-of-type{margin-bottom:7px; padding-bottom:5px; border-bottom:2px solid #000;}
-    h2{font-size:11.5px; font-weight:700; margin:6px 0 2px;}
-    table{width:100%; border-collapse:collapse; font-size:10px; margin-bottom:4px; line-height:1.1;}
-    th,td{border:1px solid #000; padding:1.5px 5px; text-align:left; background:#fff; color:#000;}
+    body{font-family:'Noto Sans KR', system-ui, sans-serif; color:#000; background:#fff; font-size:${BASE_PX}px; line-height:1.2;}
+    h1{font-size:1.9em; font-weight:800; margin:0 0 0.3em;}
+    .sub{font-size:1em; color:#222; margin-bottom:0.2em;}
+    .sub:last-of-type{margin-bottom:0.7em; padding-bottom:0.5em; border-bottom:0.2em solid #000;}
+    h2{font-size:1.15em; font-weight:700; margin:0.6em 0 0.2em;}
+    table{width:100%; border-collapse:collapse; font-size:1em; margin-bottom:0.4em; line-height:1.15;}
+    th,td{border:1px solid #000; padding:0.18em 0.5em; text-align:left; background:#fff; color:#000;}
     th{font-weight:700;}
     .num{text-align:right;}
-    .two-col{display:flex; gap:8px; align-items:flex-start;}
-    .two-col table{flex:1 1 0; min-width:0;}
-    .stat-row{display:flex; flex-wrap:nowrap; gap:0; margin-bottom:6px; border:1px solid #000;}
-    .stat{flex:1 1 0; min-width:0; padding:3px 5px; border-right:1px solid #000;}
+    tr{page-break-inside:avoid;}
+    .stat-row{display:flex; flex-wrap:nowrap; gap:0; margin-bottom:0.6em; border:1px solid #000;}
+    .stat{flex:1 1 0; min-width:0; padding:0.3em 0.5em; border-right:1px solid #000;}
     .stat:last-child{border-right:none;}
-    .stat .l{font-size:10px; color:#222; white-space:nowrap;}
-    .stat .v{font-size:11.5px; font-weight:700; white-space:nowrap;}
-    .opinion-head{border:1px solid #000; padding:3px 6px; margin-bottom:3px; display:flex; gap:18px; font-size:10px;}
-    .opinion-box{border:1px solid #000; padding:4px 6px; min-height:70px; font-size:10px; white-space:pre-wrap;}
+    .stat .l{font-size:1em; color:#222; white-space:nowrap;}
+    .stat .v{font-size:1.15em; font-weight:700; white-space:nowrap;}
+    .opinion-head{border:1px solid #000; padding:0.3em 0.6em; margin-bottom:0.3em; display:flex; gap:1.8em; font-size:1em;}
+    .opinion-box{border:1px solid #000; padding:0.4em 0.6em; min-height:7em; font-size:1em; white-space:pre-wrap;}
   </style></head><body>
   <div id="print-root">
   <h1>${titleLines[0]}</h1>
@@ -588,24 +590,29 @@ function printHTML(title, bodyHTML){
   const idoc = iframe.contentWindow.document;
   idoc.open(); idoc.write(doc); idoc.close();
   setTimeout(()=>{
-    try{
-      const root = idoc.getElementById('print-root');
-      if(root){
-        const PX_PER_MM = 96/25.4;
-        const pageHeightPx = 297*PX_PER_MM;
-        const pageWidthPx = 210*PX_PER_MM;
-        const availH = pageHeightPx - 2*MARGIN_MM*PX_PER_MM;
-        const availW = pageWidthPx - 2*MARGIN_MM*PX_PER_MM;
-        const actualH = root.scrollHeight;
-        const actualW = root.scrollWidth || availW;
-        let scale = Math.min(availH/actualH, availW/actualW);
-        if(!isFinite(scale) || scale<=0) scale = 1;
-        scale = Math.max(0.55, Math.min(scale, 2.6));
-        root.style.zoom = scale;
-      }
-    }catch(e){ /* 확대/축소 실패해도 인쇄는 계속 진행 */ }
-    try{ iframe.contentWindow.focus(); iframe.contentWindow.print(); }
-    catch(e){ showToast('인쇄 중 오류가 발생했습니다: '+e.message, true); }
+    if(fitPage){
+      try{
+        const root = idoc.getElementById('print-root');
+        if(root){
+          const PX_PER_MM = 96/25.4;
+          const availH = 297*PX_PER_MM - 2*MARGIN_MM*PX_PER_MM;
+          const availW = 210*PX_PER_MM - 2*MARGIN_MM*PX_PER_MM;
+          const actualH = root.scrollHeight;
+          const actualW = root.scrollWidth || availW;
+          let scale = Math.min(availH/actualH, availW/actualW);
+          if(!isFinite(scale) || scale<=0) scale = 1;
+          scale = Math.max(0.6, Math.min(scale, 2.8));
+          // em 단위라서 body의 font-size 하나만 바꾸면 전체(표 줄높이 포함)가 같은 비율로 재배치됨 — 표준 속성이라 Firefox 등에서도 동작
+          idoc.body.style.fontSize = (BASE_PX*scale).toFixed(2)+'px';
+        }
+      }catch(e){ /* 크기 계산 실패해도 인쇄는 계속 진행 */ }
+    }
+    // fitPage=false(데이터·검색처럼 분량이 일정하지 않은 목록)는 기준 10px 그대로 두고
+    // 여러 장에 걸쳐 자연스럽게 흐르게 둠 — 글자가 안 보이도록 억지로 줄이지 않음
+    setTimeout(()=>{
+      try{ iframe.contentWindow.focus(); iframe.contentWindow.print(); }
+      catch(e){ showToast('인쇄 중 오류가 발생했습니다: '+e.message, true); }
+    }, 120);
   }, 300);
 }
 function stripActionCol(html){
@@ -614,9 +621,9 @@ function stripActionCol(html){
 function singleTable(rowsArr, headerHtml){
   return `<table><thead>${headerHtml}</thead><tbody>${rowsArr.join('')}</tbody></table>`;
 }
-function printData(){ printHTML('금전출납부 - 전체 데이터', stripActionCol($('#data-table').innerHTML)); }
+function printData(){ printHTML('금전출납부 - 전체 데이터', stripActionCol($('#data-table').innerHTML), false); }
 function printSearchTab(){
-  printHTML('금전출납부 - 검색 결과', $('#search-stats').outerHTML.replace('id="search-stats"','') + $('#search-table').innerHTML);
+  printHTML('금전출납부 - 검색 결과', $('#search-stats').outerHTML.replace('id="search-stats"','') + $('#search-table').innerHTML, false);
 }
 function printMonthlyTab(){
   const year=Number($('#m-year').value), month=Number($('#m-month').value);
