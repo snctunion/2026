@@ -547,9 +547,11 @@ function printHTML(title, bodyHTML, fitPage){
   if(!iframe){
     iframe = document.createElement('iframe');
     iframe.id = 'print-frame';
+    // 0x0 크기로 숨기면 내부 문서도 폭 0으로 레이아웃되어 글자크기 계산이 전부 틀어지므로,
+    // 실제 A4 폭(96dpi 기준 약 794px)으로 만들고 화면 밖으로 밀어내는 방식으로 숨김
     iframe.style.position = 'fixed';
-    iframe.style.right = '0'; iframe.style.bottom = '0';
-    iframe.style.width = '0'; iframe.style.height = '0';
+    iframe.style.left = '-10000px'; iframe.style.top = '0';
+    iframe.style.width = '794px'; iframe.style.height = '1123px';
     iframe.style.border = '0'; iframe.style.visibility = 'hidden';
     document.body.appendChild(iframe);
   }
