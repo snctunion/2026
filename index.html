@@ -105,6 +105,7 @@ th,td{padding:8px 9px; border-bottom:1px solid var(--line); text-align:left; whi
 th{background:var(--paper-dim); font-weight:600; color:var(--ink-soft); font-size:12px;}
 tbody tr:hover{background:var(--paper-dim);}
 .table-wrap{overflow-x:auto; border:1px solid var(--line); border-radius:var(--radius);}
+.year-inline{width:auto; font:inherit; font-size:0.9em; padding:2px 8px; margin-right:6px; border:1px solid var(--line); border-radius:6px; background:var(--white); color:var(--ink); cursor:pointer;}
 .drag-handle{cursor:grab; color:var(--ink-soft); font-size:13px; user-select:none; padding:0 4px; letter-spacing:-2px;}
 #data-tbody tr[draggable="true"]:active{cursor:grabbing;}
 #data-tbody tr.dragging{opacity:.4;}
@@ -361,7 +362,7 @@ tbody tr:hover td{background:#F2E8FA;}
     </section>
 
     <section id="tab-budget" class="tab-panel">
-      <div class="panel-head"><h2>예산안</h2><p>항목별 연간 예산을 입력하세요. (이월금 제외)</p></div>
+      <div class="panel-head"><h2><select id="b-year" class="year-inline"></select>년 예산안</h2><p>연도를 고른 뒤 항목별 연간 예산을 입력하세요. (이월금 제외, 회계연도 기준)</p></div>
       <div id="budget-indicator-top" class="stat-row"></div>
       <div id="budget-out"></div>
       <div class="btn-row no-print" style="margin-top:6px;">
@@ -574,6 +575,9 @@ function printHTML(title, bodyHTML, fitPage){
     th{font-weight:700;}
     .num{text-align:right;}
     tr{page-break-inside:avoid;}
+    td.cat{font-weight:700;}
+    tr.subtotal td{font-weight:700;}
+    tr.total td{font-weight:800; border-top:2px solid #000;}
     .stat-row{display:flex; flex-wrap:nowrap; gap:0; margin-bottom:0.6em; border:1px solid #000;}
     .stat{flex:1 1 0; min-width:0; padding:0.3em 0.5em; border-right:1px solid #000;}
     .stat:last-child{border-right:none;}
@@ -630,6 +634,29 @@ function fitRowsToPage(idoc, marginMm){
 function stripActionCol(html){
   return html.replace(/<th class="no-print">[\s\S]*?<\/th>/g,'').replace(/<td class="no-print">[\s\S]*?<\/td>/g,'');
 }
+function escHtml(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+// 같은 대분류(상위분류)끼리 셀병합(rowspan)하고, (옵션) 대분류별 "OO 계" 행과 마지막 "총계" 행을 붙인 인쇄용 표
+function groupedTableHtml(o){
+  const groups = new Map();
+  o.list.forEach(x=>{ if(!groups.has(x.category)) groups.set(x.category, []); groups.get(x.category).push(x); });
+  const rows = []; let sumU=0, sumB=0;
+  groups.forEach((items, cat)=>{
+    let gU=0, gB=0;
+    items.forEach((x,i)=>{
+      const u=o.getUsed(x.item), b=o.getBudget(x.item); gU+=u; gB+=b;
+      rows.push(`<tr>${i===0?`<td class="cat" rowspan="${items.length}">${escHtml(cat)}</td>`:''}<td>${escHtml(x.item)}</td>${o.cellsOf(u,b)}</tr>`);
+    });
+    sumU+=gU; sumB+=gB;
+    if(o.withSubtotal) rows.push(`<tr class="subtotal"><td colspan="2">${escHtml(cat)} 계</td>${o.cellsOf(gU,gB)}</tr>`);
+  });
+  // 항목 합계와 실제 합계가 다르면(분류에 없는 항목, 업무추진비 미분배 등) 표가 안 맞아 보이지 않도록 차액 행을 넣음
+  if(o.trueUsedTotal!==undefined && o.trueUsedTotal!==sumU){
+    rows.push(`<tr><td colspan="2">기타(분류 외·미분배 금액)</td>${o.cellsOf(o.trueUsedTotal-sumU, null)}</tr>`);
+    sumU = o.trueUsedTotal;
+  }
+  rows.push(`<tr class="total"><td colspan="2">${o.totalLabel}</td>${o.cellsOf(sumU,sumB)}</tr>`);
+  return `<table><thead>${o.headerHtml}</thead><tbody>${rows.join('')}</tbody></table>`;
+}
 function singleTable(rowsArr, headerHtml){
   return `<table><thead>${headerHtml}</thead><tbody>${rowsArr.join('')}</tbody></table>`;
 }
@@ -652,11 +679,12 @@ function printMonthlyTab(){
     <div class="stat"><div class="l">월말 총잔액</div><div class="v">${fmt(r.closing)}</div></div>
   </div>`;
   const header = `<tr><th>대분류</th><th>항목</th><th class="num">금액</th></tr>`;
-  const incRows = BUDGET_INCOME.map(({category,item})=>`<tr><td>${category}</td><td>${item}</td><td class="num">${fmt(r.items[item]||0)}</td></tr>`);
-  const expRows = BUDGET_EXPENSE.map(({category,item})=>`<tr><td>${category}</td><td>${item}</td><td class="num">${fmt(r.items[item]||0)}</td></tr>`);
+  const cellsOf = (u)=>`<td class="num">${fmt(u)}</td>`;
+  const getUsed = item=>r.items[item]||0;
+  const getBudget = ()=>0;
   const html = statHtml
-    + `<h2>수입 내역</h2>` + singleTable(incRows, header)
-    + `<h2>지출 내역</h2>` + singleTable(expRows, header);
+    + `<h2>수입 내역</h2>` + groupedTableHtml({headerHtml:header, list:BUDGET_INCOME, getUsed, getBudget, cellsOf, withSubtotal:false, totalLabel:'수입총계', trueUsedTotal:r.incomeSum})
+    + `<h2>지출 내역</h2>` + groupedTableHtml({headerHtml:header, list:BUDGET_EXPENSE, getUsed, getBudget, cellsOf, withSubtotal:true, totalLabel:'지출총계', trueUsedTotal:r.expenseSum});
   printHTML(year+'년 '+month+'월 월간내역', html);
 }
 function printAuditTab(){
@@ -664,6 +692,7 @@ function printAuditTab(){
   const year=Number($('#a-year').value), q=$('#a-quarter').value;
   const {start,end,isFiscalStart} = getQuarterRange(year,q);
   const r = aggregateRange(start,end,isFiscalStart);
+  const bud = getBudget(year); // 감사연도(회계연도)의 예산
   const statHtml = `<div class="stat-row">
     <div class="stat"><div class="l">기간시작 이월금</div><div class="v">${fmt(r.carry)}</div></div>
     <div class="stat"><div class="l">순수입합계</div><div class="v">${fmt(r.incomeSum)}</div></div>
@@ -672,38 +701,44 @@ function printAuditTab(){
     <div class="stat"><div class="l">기간말 총잔액</div><div class="v">${fmt(r.closing)}</div></div>
   </div>`;
   const detailHeader = `<tr><th>상위분류</th><th>항목</th><th class="num">기간합계</th><th class="num">연간예산</th><th class="num">사용률</th><th class="num">잔액</th></tr>`;
-  const rowOf = ({category,item}) => {
-    const q2 = r.items[item]||0; const b = budget[item]||0;
-    const rate = b===0 ? '-' : (q2/b*100).toFixed(1)+'%';
-    return `<tr><td>${category}</td><td>${item}</td><td class="num">${fmt(q2)}</td><td class="num">${fmt(b)}</td><td class="num">${rate}</td><td class="num">${fmt(b-q2)}</td></tr>`;
+  const cellsOf = (u,b)=>{
+    if(b===null) return `<td class="num">${fmt(u)}</td><td class="num">-</td><td class="num">-</td><td class="num">-</td>`;
+    const rate = b===0 ? '-' : (u/b*100).toFixed(1)+'%';
+    return `<td class="num">${fmt(u)}</td><td class="num">${fmt(b)}</td><td class="num">${rate}</td><td class="num">${fmt(b-u)}</td>`;
   };
-  const incRows = BUDGET_INCOME.map(rowOf);
-  const expRows = BUDGET_EXPENSE.map(rowOf);
-  const opinionHtml = `<div class="opinion-head"><div><b>감사일자</b> ${currentAudit.auditDate||''}</div><div><b>감사자</b> ${currentAudit.auditor||''}</div></div>
-    <div class="opinion-box">${(currentAudit.opinion||'').replace(/</g,'&lt;')}</div>`;
+  const getUsed = item=>r.items[item]||0;
+  const getBudget = item=>bud[item]||0;
+  const opinionTable = `<table><tbody><tr>
+    <th style="width:14%;">감사일자</th><td style="width:36%;">${escHtml(currentAudit.auditDate||'')}</td>
+    <th style="width:14%;">감사자</th><td>${escHtml(currentAudit.auditor||'')}</td>
+  </tr></tbody></table>`;
+  const opinionBox = `<div class="opinion-box">${escHtml(currentAudit.opinion||'')}</div>`;
   const html = statHtml
-    + `<h2>수입 세부 분석</h2>` + singleTable(incRows, detailHeader)
-    + `<h2>지출 세부 분석</h2>` + singleTable(expRows, detailHeader)
-    + `<h2>감사 의견</h2>` + opinionHtml;
+    + `<h2>수입 세부 분석</h2>` + groupedTableHtml({headerHtml:detailHeader, list:BUDGET_INCOME, getUsed, getBudget, cellsOf, withSubtotal:false, totalLabel:'수입총계', trueUsedTotal:r.incomeSum})
+    + `<h2>지출 세부 분석</h2>` + groupedTableHtml({headerHtml:detailHeader, list:BUDGET_EXPENSE, getUsed, getBudget, cellsOf, withSubtotal:true, totalLabel:'지출총계', trueUsedTotal:r.expenseSum})
+    + `<h2>감사 의견</h2>` + opinionTable + opinionBox;
   printHTML(title, html);
 }
 function printBudgetTab(){
-  const {start,end} = currentFiscalRange();
+  const year = budgetYear();
+  const bud = getBudget(year);
+  const {start,end} = fiscalRangeOfYear(year);
   const r = aggregateRange(start,end,true);
-  const incomeBudgetSum = BUDGET_INCOME.reduce((s,{item})=>s+(budget[item]||0),0);
-  const expenseBudgetSum = BUDGET_EXPENSE.reduce((s,{item})=>s+(budget[item]||0),0);
+  const incomeBudgetSum = BUDGET_INCOME.reduce((s,{item})=>s+(bud[item]||0),0);
+  const expenseBudgetSum = BUDGET_EXPENSE.reduce((s,{item})=>s+(bud[item]||0),0);
   const statHtml = `<div class="stat-row">
     <div class="stat"><div class="l">작년도 이월금</div><div class="v">${fmt(r.carry)}</div></div>
     <div class="stat"><div class="l">수입예산합계</div><div class="v">${fmt(incomeBudgetSum)}</div></div>
     <div class="stat"><div class="l">지출예산합계</div><div class="v">${fmt(expenseBudgetSum)}</div></div>
   </div>`;
   const header = `<tr><th>대분류</th><th>항목</th><th class="num">연간예산(원)</th></tr>`;
-  const incRows = BUDGET_INCOME.map(({category,item})=>`<tr><td>${category}</td><td>${item}</td><td class="num">${fmt(budget[item]||0)}</td></tr>`);
-  const expRows = BUDGET_EXPENSE.map(({category,item})=>`<tr><td>${category}</td><td>${item}</td><td class="num">${fmt(budget[item]||0)}</td></tr>`);
+  const cellsOf = (u,b)=>`<td class="num">${fmt(b)}</td>`;
+  const getUsed = ()=>0;
+  const getBudget = item=>bud[item]||0;
   const html = statHtml
-    + `<h2>수입 예산</h2>` + singleTable(incRows, header)
-    + `<h2>지출 예산</h2>` + singleTable(expRows, header);
-  printHTML('예산안', html);
+    + `<h2>수입 예산</h2>` + groupedTableHtml({headerHtml:header, list:BUDGET_INCOME, getUsed, getBudget, cellsOf, withSubtotal:false, totalLabel:'수입총계'})
+    + `<h2>지출 예산</h2>` + groupedTableHtml({headerHtml:header, list:BUDGET_EXPENSE, getUsed, getBudget, cellsOf, withSubtotal:true, totalLabel:'지출총계'});
+  printHTML(year+'년 예산안', html);
 }
 function printCodesTab(){
   const incHeader = `<tr><th>코드</th><th>대분류</th><th>적요</th></tr>`;
@@ -727,7 +762,7 @@ window.printCodesTab = printCodesTab;
 window.printBudgetTab = printBudgetTab;
 
 let db=null; // Firestore 준비되면 true 취급용 플래그로 재사용 (기존 코드와의 호환을 위해 유지)
-let entries=[]; let budget={}; let editingId=null; let currentTab='input';
+let entries=[]; let budgetsByYear={}; let legacyBudget=null; let editingId=null; let currentTab='input';
 let editMode=false; let currentUser=null;
 
 function categoriesFor(type){ const tax = type==='수입'?INCOME_TAX:EXPENSE_TAX; return [...new Set(tax.map(x=>x.category))]; }
@@ -1315,22 +1350,50 @@ $('#m-year').addEventListener('input', renderMonthly);
 $('#m-month').addEventListener('change', renderMonthly);
 
 /* ---------- 예산안 ---------- */
+function currentFiscalYear(){ const n=new Date(); return (n.getMonth()+1)>=6 ? n.getFullYear() : n.getFullYear()-1; }
+// 연도별 예산. 연도별로 저장된 게 없으면, (이전 버전에서 저장해둔) 기존 단일 예산을 이번 회계연도 예산으로 대신 보여줌
+function getBudget(year){
+  const y = String(year);
+  if(budgetsByYear[y]) return budgetsByYear[y];
+  if(legacyBudget && Number(year)===currentFiscalYear()) return legacyBudget;
+  return {};
+}
+function budgetYear(){ const v=Number(($('#b-year')||{}).value); return v || currentFiscalYear(); }
+function fiscalRangeOfYear(y){ return {start:y+'-06-01', end:(y+1)+'-05-31'}; }
+function initBudgetYear(){
+  const sel=$('#b-year'); if(!sel) return;
+  const cy=currentFiscalYear(); let h='';
+  for(let y=cy-3;y<=cy+2;y++) h+=`<option value="${y}">${y}</option>`;
+  sel.innerHTML=h; sel.value=cy;
+}
 function renderBudgetTopIndicator(){
   const el = $('#budget-indicator-top'); if(!el) return;
-  const {start,end} = currentFiscalRange();
+  const y = budgetYear();
+  const {start,end} = fiscalRangeOfYear(y);
   const r = aggregateRange(start,end,true);
-  const incomeBudgetSum = BUDGET_INCOME.reduce((s,{item})=>s+(budget[item]||0),0);
-  const expenseBudgetSum = BUDGET_EXPENSE.reduce((s,{item})=>s+(budget[item]||0),0);
+  let incomeBudgetSum=0, expenseBudgetSum=0;
+  const inputs = document.querySelectorAll('[data-budget-item]');
+  if(inputs.length){
+    inputs.forEach(i2=>{
+      const isIncome = BUDGET_INCOME.some(x=>x.item===i2.dataset.budgetItem);
+      if(isIncome) incomeBudgetSum+=Number(i2.value||0); else expenseBudgetSum+=Number(i2.value||0);
+    });
+  } else {
+    const bud = getBudget(y);
+    incomeBudgetSum = BUDGET_INCOME.reduce((s,{item})=>s+(bud[item]||0),0);
+    expenseBudgetSum = BUDGET_EXPENSE.reduce((s,{item})=>s+(bud[item]||0),0);
+  }
   el.innerHTML = `
     <div class="stat"><div class="l">작년도 이월금</div><div class="v">${fmt(r.carry)}</div></div>
     <div class="stat income"><div class="l">수입예산합계</div><div class="v">${fmt(incomeBudgetSum)}</div></div>
     <div class="stat expense"><div class="l">지출예산합계</div><div class="v">${fmt(expenseBudgetSum)}</div></div>`;
 }
 function renderBudget(){
+  const bud = getBudget(budgetYear());
   const sec = (title, list) => {
     let sum=0;
     const rows = list.map(({category,item})=>{
-      const v = budget[item]||0; sum+=v;
+      const v = bud[item]||0; sum+=v;
       return `<tr><td><span class="cat-badge">${category}</span></td><td>${item}</td><td class="num"><input type="number" min="0" data-budget-item="${item}" value="${v}" style="text-align:right;" data-edit-only></td></tr>`;
     }).join('');
     return `<div class="section-title">${title}</div><div class="table-wrap"><table><thead><tr><th>대분류</th><th>항목</th><th class="num">연간예산(원)</th></tr></thead><tbody>${rows}
@@ -1352,13 +1415,15 @@ function renderBudget(){
   });
   refreshLockUI();
 }
+$('#b-year').addEventListener('change', renderBudget);
 $('#btn-budget-save').addEventListener('click', async ()=>{
 
   if(!requireEdit()) return;
   if(!db){ showToast('저장을 사용할 수 없습니다.', true); return; }
   const items={};
   document.querySelectorAll('[data-budget-item]').forEach(inp=>{ items[inp.dataset.budgetItem]=Number(inp.value||0); });
-  try{ await setDoc(doc(fdb,'meta','budget'), {items}); showToast('예산이 저장되었습니다.'); }
+  const by = budgetYear();
+  try{ await setDoc(doc(fdb,'budgets',String(by)), {items}); showToast(by+'년 예산이 저장되었습니다.'); }
   catch(e){ showToast('저장 실패: '+(e.message||e.code), true); }
 });
 
@@ -1374,9 +1439,9 @@ async function loadAudit(year,q){
   }catch(e){ currentAudit={actualBalance:0, auditor:'', auditDate:'', opinion:''}; }
   renderAudit();
 }
-function auditDetailRows(list, r){
+function auditDetailRows(list, r, bud){
   return list.map(({category,item})=>{
-    const q = r.items[item]||0; const b = budget[item]||0;
+    const q = r.items[item]||0; const b = bud[item]||0;
     const rate = b===0 ? '-' : (q/b*100).toFixed(1)+'%';
     const remain = b-q;
     return `<tr><td><span class="cat-badge">${category}</span></td><td>${item}</td><td class="num">${fmt(q)}</td><td class="num">${fmt(b)}</td><td class="num">${rate}</td><td class="num">${fmt(remain)}</td></tr>`;
@@ -1394,6 +1459,7 @@ function renderAudit(){
   const year=Number($('#a-year').value), q=$('#a-quarter').value;
   const {start,end,isFiscalStart,sYear,eYear} = getQuarterRange(year,q);
   const r = aggregateRange(start,end,isFiscalStart);
+  const bud = getBudget(year);
   lastAuditR = r;
   const qLabel = q.slice(0,3);
   const isSettlement = (q==='결산');
@@ -1430,11 +1496,11 @@ function renderAudit(){
 
   html += `<div class="section-title">수입 세부 분석 (예산 대비)</div>
   <div class="table-wrap"><table><thead><tr><th>상위분류</th><th>항목</th><th class="num">기간합계</th><th class="num">연간예산</th><th class="num">사용률</th><th class="num">잔액</th></tr></thead>
-  <tbody>${auditDetailRows(BUDGET_INCOME, r)}</tbody></table></div>`;
+  <tbody>${auditDetailRows(BUDGET_INCOME, r, bud)}</tbody></table></div>`;
 
   html += `<div class="section-title">지출 세부 분석 (예산 대비)</div>
   <div class="table-wrap"><table><thead><tr><th>상위분류</th><th>항목</th><th class="num">기간합계</th><th class="num">연간예산</th><th class="num">사용률</th><th class="num">잔액</th></tr></thead>
-  <tbody>${auditDetailRows(BUDGET_EXPENSE, r)}</tbody></table></div>`;
+  <tbody>${auditDetailRows(BUDGET_EXPENSE, r, bud)}</tbody></table></div>`;
 
   html += `<div class="section-title">감사 의견</div>
   <div class="card">
@@ -1486,12 +1552,13 @@ function renderBudgetIndicator(){
   const el = $('#budget-indicator'); if(!el) return;
   const {start,end} = currentFiscalRange();
   const r = aggregateRange(start,end,true);
+  const curBud = getBudget(currentFiscalYear());
   const incomeHtml = BUDGET_INCOME.map(({item})=>{
-    const used = r.items[item]||0, bud = budget[item]||0;
+    const used = r.items[item]||0, bud = curBud[item]||0;
     return indChip(item, used, bud, used-bud);
   }).join('');
   const expenseHtml = BUDGET_EXPENSE.map(({item})=>{
-    const used = r.items[item]||0, bud = budget[item]||0;
+    const used = r.items[item]||0, bud = curBud[item]||0;
     return indChip(item, used, bud, bud-used);
   }).join('');
   el.innerHTML = `<div class="indicator-grid inc">${incomeHtml}</div><div class="indicator-grid exp">${expenseHtml}</div>`;
@@ -1503,17 +1570,21 @@ function renderAll(){
 }
 
 /* ---------- 초기화 ---------- */
-let unsubEntries=null, unsubBudget=null, unsubTaxonomy=null;
+let unsubEntries=null, unsubBudget=null, unsubLegacyBudget=null, unsubTaxonomy=null;
 function attachListeners(){
   unsubEntries = onSnapshot(collection(fdb,'entries'), snap=>{
     entries = snap.docs.map(d=>({id:d.id, ...d.data()}));
     computeBalances(); renderAll();
   }, err=>{ console.error('entries error', err); showToast('데이터 읽기 오류: '+err.message, true); });
 
-  unsubBudget = onSnapshot(doc(fdb,'meta','budget'), snap=>{
-    budget = snap.exists() ? (snap.data().items||{}) : {};
-    renderAll();
+  unsubBudget = onSnapshot(collection(fdb,'budgets'), snap=>{
+    const m={}; snap.docs.forEach(d=>{ m[d.id]=(d.data().items||{}); });
+    budgetsByYear = m; renderAll();
   }, err=>{ console.error('budget error', err); });
+  unsubLegacyBudget = onSnapshot(doc(fdb,'meta','budget'), snap=>{
+    legacyBudget = snap.exists() ? (snap.data().items||{}) : null;
+    renderAll();
+  }, err=>{ console.error('legacy budget error', err); });
 
   unsubTaxonomy = onSnapshot(doc(fdb,'meta','taxonomy'), snap=>{
     if(snap.exists()){
@@ -1530,11 +1601,13 @@ function attachListeners(){
 function detachListeners(){
   if(unsubEntries){ unsubEntries(); unsubEntries=null; }
   if(unsubBudget){ unsubBudget(); unsubBudget=null; }
+  if(unsubLegacyBudget){ unsubLegacyBudget(); unsubLegacyBudget=null; }
   if(unsubTaxonomy){ unsubTaxonomy(); unsubTaxonomy=null; }
-  entries=[]; budget={};
+  entries=[]; budgetsByYear={}; legacyBudget=null;
 }
 async function init(){
   initMonthSelect();
+  initBudgetYear();
   populateMethodSelect();
   db = true; // Firestore 사용
   onAuthStateChanged(auth, (user)=>{
