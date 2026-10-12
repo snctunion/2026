@@ -681,10 +681,10 @@ function printMonthlyTab(){
   const header = `<tr><th>대분류</th><th>항목</th><th class="num">금액</th></tr>`;
   const cellsOf = (u)=>`<td class="num">${fmt(u)}</td>`;
   const getUsed = item=>r.items[item]||0;
-  const getBudget = ()=>0;
+  const getBud = ()=>0;
   const html = statHtml
-    + `<h2>수입 내역</h2>` + groupedTableHtml({headerHtml:header, list:BUDGET_INCOME, getUsed, getBudget, cellsOf, withSubtotal:false, totalLabel:'수입총계', trueUsedTotal:r.incomeSum})
-    + `<h2>지출 내역</h2>` + groupedTableHtml({headerHtml:header, list:BUDGET_EXPENSE, getUsed, getBudget, cellsOf, withSubtotal:true, totalLabel:'지출총계', trueUsedTotal:r.expenseSum});
+    + `<h2>수입 내역</h2>` + groupedTableHtml({headerHtml:header, list:BUDGET_INCOME, getUsed, getBudget:getBud, cellsOf, withSubtotal:false, totalLabel:'수입총계', trueUsedTotal:r.incomeSum})
+    + `<h2>지출 내역</h2>` + groupedTableHtml({headerHtml:header, list:BUDGET_EXPENSE, getUsed, getBudget:getBud, cellsOf, withSubtotal:true, totalLabel:'지출총계', trueUsedTotal:r.expenseSum});
   printHTML(year+'년 '+month+'월 월간내역', html);
 }
 function printAuditTab(){
@@ -707,15 +707,15 @@ function printAuditTab(){
     return `<td class="num">${fmt(u)}</td><td class="num">${fmt(b)}</td><td class="num">${rate}</td><td class="num">${fmt(b-u)}</td>`;
   };
   const getUsed = item=>r.items[item]||0;
-  const getBudget = item=>bud[item]||0;
+  const getBud = item=>bud[item]||0;
   const opinionTable = `<table><tbody><tr>
     <th style="width:14%;">감사일자</th><td style="width:36%;">${escHtml(currentAudit.auditDate||'')}</td>
     <th style="width:14%;">감사자</th><td>${escHtml(currentAudit.auditor||'')}</td>
   </tr></tbody></table>`;
   const opinionBox = `<div class="opinion-box">${escHtml(currentAudit.opinion||'')}</div>`;
   const html = statHtml
-    + `<h2>수입 세부 분석</h2>` + groupedTableHtml({headerHtml:detailHeader, list:BUDGET_INCOME, getUsed, getBudget, cellsOf, withSubtotal:false, totalLabel:'수입총계', trueUsedTotal:r.incomeSum})
-    + `<h2>지출 세부 분석</h2>` + groupedTableHtml({headerHtml:detailHeader, list:BUDGET_EXPENSE, getUsed, getBudget, cellsOf, withSubtotal:true, totalLabel:'지출총계', trueUsedTotal:r.expenseSum})
+    + `<h2>수입 세부 분석</h2>` + groupedTableHtml({headerHtml:detailHeader, list:BUDGET_INCOME, getUsed, getBudget:getBud, cellsOf, withSubtotal:false, totalLabel:'수입총계', trueUsedTotal:r.incomeSum})
+    + `<h2>지출 세부 분석</h2>` + groupedTableHtml({headerHtml:detailHeader, list:BUDGET_EXPENSE, getUsed, getBudget:getBud, cellsOf, withSubtotal:true, totalLabel:'지출총계', trueUsedTotal:r.expenseSum})
     + `<h2>감사 의견</h2>` + opinionTable + opinionBox;
   printHTML(title, html);
 }
@@ -734,10 +734,10 @@ function printBudgetTab(){
   const header = `<tr><th>대분류</th><th>항목</th><th class="num">연간예산(원)</th></tr>`;
   const cellsOf = (u,b)=>`<td class="num">${fmt(b)}</td>`;
   const getUsed = ()=>0;
-  const getBudget = item=>bud[item]||0;
+  const getBud = item=>bud[item]||0;
   const html = statHtml
-    + `<h2>수입 예산</h2>` + groupedTableHtml({headerHtml:header, list:BUDGET_INCOME, getUsed, getBudget, cellsOf, withSubtotal:false, totalLabel:'수입총계'})
-    + `<h2>지출 예산</h2>` + groupedTableHtml({headerHtml:header, list:BUDGET_EXPENSE, getUsed, getBudget, cellsOf, withSubtotal:true, totalLabel:'지출총계'});
+    + `<h2>수입 예산</h2>` + groupedTableHtml({headerHtml:header, list:BUDGET_INCOME, getUsed, getBudget:getBud, cellsOf, withSubtotal:false, totalLabel:'수입총계'})
+    + `<h2>지출 예산</h2>` + groupedTableHtml({headerHtml:header, list:BUDGET_EXPENSE, getUsed, getBudget:getBud, cellsOf, withSubtotal:true, totalLabel:'지출총계'});
   printHTML(year+'년 예산안', html);
 }
 function printCodesTab(){
