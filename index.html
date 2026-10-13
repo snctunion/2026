@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{
   --paper:#E7DEF3; --paper-dim:#DFD2ED; --ink:#160F26; --ink-soft:#584A76;
@@ -63,20 +63,13 @@ h1,h2,h3{font-family:'Noto Serif KR', Georgia, serif; margin:0;}
 .navbtn:hover{background:rgba(255,255,255,.08);}
 .navbtn.active{background:rgba(255,255,255,.12); color:#fff; border-left-color:var(--accent); font-weight:600;}
 #content{flex:1; min-width:0; padding:28px 32px 60px; max-width:1000px;}
-#mobile-menu-toggle{display:none;}
 @media (max-width:760px){
   #app{flex-direction:column;}
-  #sidebar{position:sticky;top:0;z-index:1000;width:100%;flex:none;flex-direction:row;flex-wrap:wrap;overflow:visible;padding:calc(env(safe-area-inset-top,0px) + 6px) 10px 8px;align-items:center;gap:6px;box-shadow:0 3px 12px rgba(38,18,70,.18);}
-  #sidebar .brand{display:block;order:0;flex:1;border:0;padding:4px 6px;min-width:0;}
-  #sidebar .brand b{font-size:14px;line-height:1.2;} #sidebar .brand span{font-size:11px;margin-top:2px;}
-  #mobile-menu-toggle{display:flex;order:1;align-items:center;justify-content:center;gap:8px;min-height:42px;padding:8px 12px;border:1px solid rgba(255,255,255,.28);border-radius:9px;background:rgba(255,255,255,.12);color:#fff;font:600 14px inherit;cursor:pointer;}
-  #mobile-menu-toggle .hamburger{font-size:21px;line-height:1;}
-  .lockbox{order:2;margin:0 0 0 4px;padding:6px 9px;flex:0 0 auto;white-space:nowrap;font-size:11px;}
-  .lockbox .st{font-size:11px;} .lockbox a{font-size:10px;margin-top:1px;}
-  .navbtn{display:none;order:3;flex:0 0 100%;width:100%;text-align:left;padding:11px 14px;border:0;border-radius:8px;background:rgba(255,255,255,.07);}
-  #sidebar.mobile-menu-open .navbtn{display:block;}
-  .navbtn.active{background:rgba(255,255,255,.18);border-left:3px solid var(--accent);}
-  #content{padding:18px 12px 48px;}
+  #sidebar{width:100%; flex:none; flex-direction:row; overflow-x:auto; padding:env(safe-area-inset-top,0px) 8px 0; align-items:center;}
+  #sidebar .brand{display:none;} .lockbox{margin:8px; flex:0 0 auto; white-space:nowrap;}
+  .navbtn{flex:0 0 auto; white-space:nowrap; border-left:none; border-bottom:3px solid transparent;}
+  .navbtn.active{border-left:none; border-bottom-color:var(--accent);}
+  #content{padding:20px 16px 60px;}
 }
 .tab-panel{display:none;} .tab-panel.active{display:block;}
 .panel-head{margin-bottom:18px;}
@@ -292,7 +285,6 @@ tbody tr:hover td{background:#F2E8FA;}
 <div id="app" style="display:none;">
   <nav id="sidebar">
     <div class="brand"><b>SNCT노동조합</b><span>금전출납부</span></div>
-    <button type="button" id="mobile-menu-toggle" aria-expanded="false" aria-controls="sidebar"><span class="hamburger" aria-hidden="true">☰</span><span id="mobile-current-tab">메뉴</span></button>
     <div class="lockbox">
       <div class="st" id="lock-status">🔓 <span id="lock-email"></span></div>
       <a id="lnk-lock-toggle">로그아웃</a>
@@ -841,93 +833,58 @@ window.printMonthlyTab = printMonthlyTab;
 function exportBudgetExcel(){
   if(typeof XLSX==='undefined'){showToast('엑셀 라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인하세요.',true);return;}
   const year=budgetYear(), bud=getBudget(year), {start,end}=fiscalRangeOfYear(year), r=aggregateRange(start,end,true);
-  const incomeTotal=BUDGET_INCOME.reduce((s,x)=>s+Number(bud[x.item]||0),0);
-  const expenseTotal=BUDGET_EXPENSE.reduce((s,x)=>s+Number(bud[x.item]||0),0);
   const rows=[
     [`${year}년도 예산안`],
-    ['회계연도',`${start} ~ ${end}`,'작년도 이월금',Number(r.carry||0)],
-    ['수입예산합계',incomeTotal,'지출예산합계',expenseTotal],
+    ['작년도 이월금',r.carry,'','예산연도',year],
+    ['수입예산합계',null,'','지출예산합계',null],
     [],
     ['구분','대분류','항목','연간예산(원)']
   ];
-  const sectionRows=[], subtotalRows=[], detailRows=[], totalRows=[];
-  const appendBudgetSection=(sectionTitle,list){
-    const sectionExcelRow=rows.length+1;
-    rows.push([sectionTitle]); sectionRows.push(sectionExcelRow);
-    let previousCategory=null, categoryStart=null, categorySubtotalRows=[];
+  const incomeStart=rows.length+1;
+  const appendBudgetSection=(sectionTitle,list)=>{
+    rows.push([sectionTitle]);
+    const sectionStart=rows.length+1;
+    let previousCategory=null, categoryStart=null;
+    const categoryRows=[];
     for(const {category,item} of list){
       if(category!==previousCategory){
         if(previousCategory!==null){
-          const sr=rows.length+1;
-          rows.push(['',`${previousCategory} 소계`,'',`=SUM(D${categoryStart}:D${sr-1})`]);
-          subtotalRows.push(sr); categorySubtotalRows.push(sr);
+          const subtotalRow=rows.length+1;
+          rows.push(['',previousCategory+' 소계','',`=SUM(D${categoryStart}:D${subtotalRow-1})`]);
+          categoryRows.push(subtotalRow);
         }
         previousCategory=category; categoryStart=rows.length+1;
       }
-      const dr=rows.length+1;
-      rows.push(['',category,item,Number(bud[item]||0)]); detailRows.push(dr);
+      rows.push(['',category,item,Number(bud[item]||0)]);
     }
     if(previousCategory!==null){
-      const sr=rows.length+1;
-      rows.push(['',`${previousCategory} 소계`,'',`=SUM(D${categoryStart}:D${sr-1})`]);
-      subtotalRows.push(sr); categorySubtotalRows.push(sr);
+      const subtotalRow=rows.length+1;
+      rows.push(['',previousCategory+' 소계','',`=SUM(D${categoryStart}:D${subtotalRow-1})`]);
+      categoryRows.push(subtotalRow);
     }
-    const tr=rows.length+1;
-    rows.push(['',`${sectionTitle} 합계`,'',`=SUM(${categorySubtotalRows.map(n=>'D'+n).join(',')})`]);
-    totalRows.push(tr);
-    return {sectionRow:sectionExcelRow,totalRow:tr};
+    const sectionEnd=rows.length;
+    const totalRow=rows.length+1;
+    rows.push(['',sectionTitle+' 합계','',`=SUM(${categoryRows.map(n=>'D'+n).join(',')})`]);
+    return {start:sectionStart,end:sectionEnd,totalRow};
   };
   const income=appendBudgetSection('수입 예산',BUDGET_INCOME);
   rows.push([]);
   const expense=appendBudgetSection('지출 예산',BUDGET_EXPENSE);
   const ws=XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols']=[{wch:15},{wch:23},{wch:34},{wch:19}];
-  ws['!merges']=[
-    {s:{r:0,c:0},e:{r:0,c:3}},
-    {s:{r:income.sectionRow-1,c:0},e:{r:income.sectionRow-1,c:3}},
-    {s:{r:expense.sectionRow-1,c:0},e:{r:expense.sectionRow-1,c:3}}
-  ];
+  ws['!cols']=[{wch:12},{wch:24},{wch:32},{wch:18},{wch:14}];
+  ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:3}}];
+  // 상단 합계는 같은 시트의 합계 셀을 참조해 수정 가능한 예산표로 유지
+  const incomeTotalCell='D'+income.totalRow;
+  const expenseTotalCell='D'+expense.totalRow;
+  ws['B3']={t:'n',f:incomeTotalCell.replace('D','D'),z:'#,##0'};
+  ws['E3']={t:'n',f:expenseTotalCell,z:'#,##0'};
+  // 예산 금액/합계는 숫자 서식으로 표시
+  Object.keys(ws).forEach(addr=>{
+    if(addr[0]==='!' )return;
+    const cell=ws[addr];
+    if(cell && (addr[0]==='D'||addr[0]==='B'&&/^B[23]$/.test(addr)) && (cell.t==='n'||cell.f)) cell.z='#,##0';
+  });
   ws['!freeze']={xSplit:0,ySplit:5,topLeftCell:'A6',activePane:'bottomLeft',state:'frozen'};
-  ws['!autofilter']={ref:`A5:D${5+detailRows.length+subtotalRows.length+2}`};
-  const purple='7026D8', palePurple='F2E7FF', lighter='FAF7FF', borderColor='C9B5E8', white='FFFFFF', textColor='34204D', gray='F0EDF4';
-  const border={top:{style:'thin',color:{rgb:borderColor}},bottom:{style:'thin',color:{rgb:borderColor}},left:{style:'thin',color:{rgb:borderColor}},right:{style:'thin',color:{rgb:borderColor}}};
-  const setStyle=(addr,style)=>{if(ws[addr])ws[addr].s=style;};
-  const lastRow=rows.length;
-  for(let rr=1;rr<=lastRow;rr++){
-    for(let cc=0;cc<4;cc++){
-      const addr=XLSX.utils.encode_cell({r:rr-1,c:cc});
-      if(!ws[addr]) continue;
-      ws[addr].s={font:{name:'맑은 고딕',sz:10,color:{rgb:textColor}},alignment:{vertical:'center',horizontal:cc===3?'right':'left',wrapText:true},border};
-      if(cc===3) ws[addr].z='#,##0;[Red]-#,##0;–';
-    }
-    if(rows[rr-1] && rows[rr-1].length===0) ws['!rows']=(ws['!rows']||[]).concat([{hpt:7}]);
-  }
-  setStyle('A1',{font:{name:'맑은 고딕',sz:18,bold:true,color:{rgb:white}},fill:{patternType:'solid',fgColor:{rgb:purple}},alignment:{horizontal:'center',vertical:'center'},border});
-  ws['!rows']=ws['!rows']||[]; ws['!rows'][0]={hpt:34};
-  for(const addr of ['A2','C2']) setStyle(addr,{font:{name:'맑은 고딕',sz:10,bold:true,color:{rgb:purple}},fill:{patternType:'solid',fgColor:{rgb:palePurple}},alignment:{horizontal:'center',vertical:'center'},border});
-  setStyle('B2',{font:{name:'맑은 고딕',sz:10,color:{rgb:textColor}},alignment:{horizontal:'center',vertical:'center'},border});
-  setStyle('D2',{font:{name:'맑은 고딕',sz:10,bold:true,color:{rgb:textColor}},alignment:{horizontal:'right',vertical:'center'},numFmt:'#,##0;[Red]-#,##0;–',border});
-  for(const addr of ['A3','C3']) setStyle(addr,{font:{name:'맑은 고딕',sz:10,bold:true,color:{rgb:white}},fill:{patternType:'solid',fgColor:{rgb:purple}},alignment:{horizontal:'center',vertical:'center'},border});
-  for(const addr of ['B3','D3']) setStyle(addr,{font:{name:'맑은 고딕',sz:11,bold:true,color:{rgb:purple}},fill:{patternType:'solid',fgColor:{rgb:palePurple}},alignment:{horizontal:'right',vertical:'center'},numFmt:'#,##0;[Red]-#,##0;–',border});
-  ws['B3']={t:'n',f:`D${income.totalRow}`,s:ws['B3']?.s,z:'#,##0;[Red]-#,##0;–'};
-  ws['D3']={t:'n',f:`D${expense.totalRow}`,s:ws['D3']?.s,z:'#,##0;[Red]-#,##0;–'};
-  ['A5','B5','C5','D5'].forEach(addr=>setStyle(addr,{font:{name:'맑은 고딕',sz:10,bold:true,color:{rgb:white}},fill:{patternType:'solid',fgColor:{rgb:purple}},alignment:{horizontal:'center',vertical:'center',wrapText:true},border}));
-  ws['!rows'][4]={hpt:25};
-  for(const rowNum of sectionRows){
-    for(let c=0;c<4;c++) setStyle(XLSX.utils.encode_cell({r:rowNum-1,c}),{font:{name:'맑은 고딕',sz:11,bold:true,color:{rgb:white}},fill:{patternType:'solid',fgColor:{rgb:purple}},alignment:{horizontal:'left',vertical:'center'},border});
-    ws['!rows'][rowNum-1]={hpt:23};
-  }
-  for(const rowNum of subtotalRows){
-    for(let c=0;c<4;c++) setStyle(XLSX.utils.encode_cell({r:rowNum-1,c}),{font:{name:'맑은 고딕',sz:10,bold:true,color:{rgb:textColor}},fill:{patternType:'solid',fgColor:{rgb:lighter}},alignment:{horizontal:c===3?'right':'left',vertical:'center'},numFmt:c===3?'#,##0;[Red]-#,##0;–':undefined,border});
-  }
-  for(const rowNum of totalRows){
-    for(let c=0;c<4;c++) setStyle(XLSX.utils.encode_cell({r:rowNum-1,c}),{font:{name:'맑은 고딕',sz:11,bold:true,color:{rgb:purple}},fill:{patternType:'solid',fgColor:{rgb:palePurple}},alignment:{horizontal:c===3?'right':'left',vertical:'center'},numFmt:c===3?'#,##0;[Red]-#,##0;–':undefined,border});
-    ws['!rows'][rowNum-1]={hpt:23};
-  }
-  for(const rowNum of detailRows){
-    if(rowNum%2===0){for(let c=0;c<4;c++) setStyle(XLSX.utils.encode_cell({r:rowNum-1,c}),{font:{name:'맑은 고딕',sz:10,color:{rgb:textColor}},fill:{patternType:'solid',fgColor:{rgb:'FCFAFF'}},alignment:{horizontal:c===3?'right':'left',vertical:'center'},numFmt:c===3?'#,##0;[Red]-#,##0;–':undefined,border});}
-    ws['!rows'][rowNum-1]={hpt:20};
-  }
   const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'예산안');
   XLSX.writeFile(wb,`예산안_${year}.xlsx`);
 }
@@ -1075,24 +1032,11 @@ $('#lnk-lock-toggle').addEventListener('click', ()=> signOut(auth));
 
 function switchTab(tab){
   currentTab = tab;
-  const activeButton = document.querySelector('.navbtn[data-tab="'+tab+'"]');
-  const currentLabel = document.getElementById('mobile-current-tab');
-  if(currentLabel && activeButton) currentLabel.textContent = activeButton.textContent.trim();
-  const sidebar = document.getElementById('sidebar');
-  const menuToggle = document.getElementById('mobile-menu-toggle');
-  if(sidebar) sidebar.classList.remove('mobile-menu-open');
-  if(menuToggle) menuToggle.setAttribute('aria-expanded','false');
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.navbtn').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
   $('#tab-'+tab).classList.add('active');
 }
 document.querySelectorAll('.navbtn').forEach(b=> b.addEventListener('click',()=>switchTab(b.dataset.tab)) );
-const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
-if(mobileMenuToggle) mobileMenuToggle.addEventListener('click',()=>{
-  const sidebar=document.getElementById('sidebar');
-  const opened=sidebar.classList.toggle('mobile-menu-open');
-  mobileMenuToggle.setAttribute('aria-expanded',String(opened));
-});
 
 function computeBalances(){
   entries.sort((a,b)=> a.date===b.date ? ((a.ts||0)-(b.ts||0)) : a.date.localeCompare(b.date));
