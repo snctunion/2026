@@ -4,8 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>SNCT노동조합 금전출납부</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+CjxyZWN0IHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgcng9IjEzIiBmaWxsPSIjNjAyRkFFIi8+Cjx0ZXh0IHg9IjMyIiB5PSIyOSIgZm9udC1mYW1pbHk9IkFyaWFsLCBIZWx2ZXRpY2EsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTUiIGZvbnQtd2VpZ2h0PSI4MDAiIGZpbGw9IiNmZmZmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGxldHRlci1zcGFjaW5nPSIwLjUiPlNOQ1Q8L3RleHQ+Cjx0ZXh0IHg9IjMyIiB5PSI0NiIgZm9udC1mYW1pbHk9IkFyaWFsLCBIZWx2ZXRpY2EsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTMiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiNmZmZmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGxldHRlci1zcGFjaW5nPSIwLjUiPlVOSU9OPC90ZXh0Pgo8L3N2Zz4=">
-<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+CjxyZWN0IHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgcng9IjEzIiBmaWxsPSIjNjAyRkFFIi8+Cjx0ZXh0IHg9IjMyIiB5PSIyOSIgZm9udC1mYW1pbHk9IkFyaWFsLCBIZWx2ZXRpY2EsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTUiIGZvbnQtd2VpZ2h0PSI4MDAiIGZpbGw9IiNmZmZmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGxldHRlci1zcGFjaW5nPSIwLjUiPlNOQ1Q8L3RleHQ+Cjx0ZXh0IHg9IjMyIiB5PSI0NiIgZm9udC1mYW1pbHk9IkFyaWFsLCBIZWx2ZXRpY2EsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTMiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiNmZmZmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGxldHRlci1zcGFjaW5nPSIwLjUiPlVOSU9OPC90ZXh0Pgo8L3N2Zz4=">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png">
+<link rel="apple-touch-icon" sizes="180x180" href="./icon-180.png">
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#7026D8">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -556,24 +559,44 @@ function printHTML(title, bodyHTML, fitPage){
     document.body.appendChild(iframe);
   }
   const titleLines = String(title).split('\n');
-  const MARGIN_MM = 12; // 위/아래/좌/우 동일 여백
+  const MARGIN_MM = 6; // 실험안: 위·아래 여백 축소, 인쇄 가능 높이에 맞춰 표 크기 자동 조정
   const BASE_PX = 10;
   const doc = `<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>${titleLines[0]}</title>
   <style>
-    @page{ size: A4 portrait; margin: ${MARGIN_MM}mm; }
+    @page{ size: A4 portrait; margin: ${MARGIN_MM}mm 12mm; }
     *{box-sizing:border-box;}
     html,body{margin:0; padding:0;}
     body{font-family:'Malgun Gothic','Apple SD Gothic Neo','Noto Sans KR',system-ui,sans-serif; color:#000; background:#fff; font-size:${BASE_PX}px; line-height:1.2;}
-    #print-root{width:${210-2*MARGIN_MM}mm; margin:0 auto; display:flow-root;}
-    h1{font-size:1.9em; font-weight:800; margin:0 0 0.3em;}
-    .sub{font-size:1em; color:#222; margin-bottom:0.2em;}
+    #print-root{width:186mm; margin:0 auto; display:flow-root; padding-bottom:0;}
+    h1{font-size:2.25em; font-weight:800; text-align:center; margin:0 0 0.3em;}
+    .sub{font-size:1em; color:#222; margin-bottom:0.2em; text-align:center;}
     .sub:last-of-type{margin-bottom:0.7em; padding-bottom:0.5em; border-bottom:0.2em solid #000;}
-    h2{font-size:1.15em; font-weight:700; margin:0.6em 0 0.25em;}
+    h2{font-size:1.35em; font-weight:700; margin:0.6em 0 0.25em; text-align:left;}
     table{width:100%; border-collapse:collapse; font-size:1em; margin-bottom:0.4em; line-height:1.1;}
-    th,td{border:1px solid #000; padding:0.2em 0.5em; text-align:left; background:#fff; color:#000; vertical-align:middle;}
+    th,td{border:1px solid #000; padding:0.25em 0.45em; text-align:left; background:#fff; color:#000; vertical-align:middle;}
+    thead th{text-align:center;background:#e3e3e3 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    td.cat, tr.subtotal td, tr.total td{background:#e8e8e8 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    td.cat{width:18%; padding-left:1.2em !important; text-align:left;}
+    td.cat + td{padding-left:1.2em !important; text-align:left;}
+    /* 항목명과 상위분류명이 각 셀 안에서 같은 들여쓰기 기준을 사용 */
+    td.cat{padding-left:1.2em !important;}
+    td.cat[rowspan] + td{padding-left:1.2em !important;}
+    /* rowspan으로 상위분류 셀이 생략된 다음 행의 항목도 같은 들여쓰기 적용 */
+    tbody tr td:first-child:not(.cat):not(.num){padding-left:1.2em !important;text-align:left;}
+    tr.subtotal td:first-child, tr.total td:first-child{padding-left:1.2em !important; text-align:left;}
+    .stat-row .stat:nth-child(even){background:#f0f0f0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .audit-signature th{background:#e8e8e8 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .audit-banner h3{text-align:center;font-size:1.5em;}
+    .audit-banner p,.audit-banner .period{text-align:center;font-size:1.2em;}
+    .opinion-head{justify-content:flex-start;text-align:center;}
+    .opinion-box{min-height:10.5em;position:relative;padding-top:1.8em;}
+    .opinion-box:before{content:'감사의견 :';position:absolute;top:.35em;left:.6em;font-weight:700;}
     body.fit th, body.fit td{padding-top:0; padding-bottom:0;}
-    th{font-weight:700;}
-    .num{text-align:right;}
+    th{font-weight:700;text-align:center;}
+    td.num{text-align:right !important;}
+    /* 모든 출력 메뉴에서 열 제목은 가운데, 금액·수치는 오른쪽 정렬 */
+    table th, table thead th{ text-align:center !important; }
+    .num{text-align:right !important;}
     tr{page-break-inside:avoid;}
     td.cat{font-weight:700;}
     tr.subtotal td{font-weight:700;}
@@ -581,16 +604,21 @@ function printHTML(title, bodyHTML, fitPage){
     .stat-row{display:flex; flex-wrap:nowrap; gap:0; margin-bottom:0.6em; border:1px solid #000;}
     .stat{flex:1 1 0; min-width:0; padding:0.3em 0.5em; border-right:1px solid #000;}
     .stat:last-child{border-right:none;}
-    .stat .l{font-size:1em; color:#222;}
-    .stat .v{font-size:1.15em; font-weight:700;}
+    .stat .l{font-size:1em; color:#222; text-align:center;}
+    .stat .v{font-size:1.15em; font-weight:700; text-align:right;}
     .opinion-head{border:1px solid #000; padding:0.3em 0.6em; margin-bottom:0.3em; display:flex; gap:1.8em; font-size:1em;}
-    .opinion-box{border:1px solid #000; padding:0.4em 0.6em; min-height:7em; font-size:1em; white-space:pre-wrap;}
+    .opinion-box{border:1px solid #000; padding:0.4em 0.6em; min-height:11em; font-size:1em; white-space:pre-wrap;}
+    .print-footer{position:fixed;left:0;right:0;bottom:0;width:100%;text-align:center;font-size:2.25em;font-weight:800;line-height:1.1;background:#fff;margin:0;padding:0;break-inside:avoid;}
+    .budget-report{position:fixed;left:0;right:0;bottom:9mm;width:100%;text-align:right;font-size:10px;font-weight:400;line-height:1.2;background:#fff;margin:0;break-inside:avoid;}
+    @media screen{.print-footer,.budget-report{display:none;}}
   </style></head><body class="${fitPage?'fit':''}">
   <div id="print-root">
   <h1>${titleLines[0]}</h1>
   ${titleLines.slice(1).map(s=>`<div class="sub">${s}</div>`).join('') || '<div class="sub"></div>'}
   ${bodyHTML}
   </div>
+  ${titleLines[0].includes('예산안') ? `<div class="budget-report">${titleLines[0].match(/\d{4}/)?.[0] || ''}년도 예산안을 보고합니다.</div>` : ''}
+  <div class="print-footer">선광신컨테이너터미널(주) 노동조합</div>
   </body></html>`;
   const idoc = iframe.contentWindow.document;
   idoc.open(); idoc.write(doc); idoc.close();
@@ -610,26 +638,53 @@ function fitRowsToPage(idoc, marginMm){
   const root = idoc.getElementById('print-root');
   if(!root) return;
   const tables = Array.from(root.querySelectorAll('table'));
-  const trs = Array.from(root.querySelectorAll('table tr'));
-  if(!trs.length) return;
-  const PX_PER_MM = 96/25.4;
-  const availH = Math.floor((297 - 2*marginMm)*PX_PER_MM) - 6; // 반올림 오차로 2쪽으로 넘어가지 않게 6px 여유
-  trs.forEach(tr=>{ tr.style.height=''; });
-  tables.forEach(t=>{ t.style.fontSize=''; });
-  const tableNatural = tables.reduce((s,t)=>s+t.getBoundingClientRect().height, 0);
-  const nonTable = root.getBoundingClientRect().height - tableNatural; // 제목·인디케이터·소제목·의견박스 등 표 바깥 영역
-  let rowH = (availH - nonTable) / trs.length;
-  if(!isFinite(rowH) || rowH<=0) return;
-  // 행이 높아질수록 글자도 같이 키우되, 최소 10px(읽을 수 있는 크기)·최대 17px
-  const T = Math.max(10, Math.min(Math.floor(rowH*0.5), 17));
-  tables.forEach(t=>{ t.style.fontSize = T+'px'; });
-  for(let i=0;i<8;i++){
-    trs.forEach(tr=>{ tr.style.height = rowH+'px'; });
-    const total = root.getBoundingClientRect().height;
-    const diff = availH - total;
-    if(Math.abs(diff) <= 1) break;
-    rowH = Math.max(12, rowH + diff/trs.length); // 행이 너무 많아 한 장에 못 담는 극단적인 경우에도 최소 높이는 유지
+  const rows = Array.from(root.querySelectorAll('table tr'));
+  if(!rows.length) return;
+  const pxPerMm = 96/25.4;
+  // 본문/표만 이 영역에 맞춘다. 예산안 보고 문구와 조합 이름표는 페이지 하단에 고정한다.
+  // 데이터·검색 메뉴는 printHTML(..., false)로 호출되어 이 자동 맞춤 대상이 아니다.
+  // 하단 15mm는 보고 문구와 조합 이름표 전용으로 비워 둔다. 본문/표는 그 위에서 한 장에 맞춘다.
+  const usableH = (297 - 2*marginMm - 15) * pxPerMm;
+  rows.forEach(tr => { tr.style.height = ''; });
+  tables.forEach(t => { t.style.fontSize = ''; });
+  // Measure the non-table content first; table rows absorb the remaining page height.
+  const tableH = () => tables.reduce((sum,t) => sum + t.getBoundingClientRect().height, 0);
+  let nonTableH = Math.max(0, root.getBoundingClientRect().height - tableH());
+  let targetRowH = (usableH - nonTableH - 8) / rows.length;
+  if(!Number.isFinite(targetRowH) || targetRowH <= 0) return;
+  // Grow/shrink the table typography to suit the available page, then distribute remaining height evenly.
+  let fontPx = Math.max(9, Math.min(17, targetRowH * 0.58));
+  tables.forEach(t => { t.style.fontSize = fontPx + 'px'; });
+  for(let pass=0; pass<5; pass++){
+    const nowTableH = tableH();
+    nonTableH = Math.max(0, root.getBoundingClientRect().height - nowTableH);
+    targetRowH = (usableH - nonTableH - 8) / rows.length;
+    if(!Number.isFinite(targetRowH) || targetRowH <= 0) break;
+    rows.forEach(tr => { tr.style.height = targetRowH + 'px'; });
+    const totalH = root.getBoundingClientRect().height;
+    const delta = usableH - totalH;
+    if(Math.abs(delta) < 3) break;
+    const adjusted = Math.max(9, Math.min(17, fontPx + delta / Math.max(1, rows.length) * 0.12));
+    if(Math.abs(adjusted-fontPx) < 0.1) break;
+    fontPx = adjusted;
+    tables.forEach(t => { t.style.fontSize = fontPx + 'px'; });
   }
+  // 마지막 보정: 본문/표 높이를 하단 문구 전용 영역 위에 맞춘다.
+  const finalH = root.getBoundingClientRect().height;
+  const diff = usableH - finalH;
+  if(Math.abs(diff) > 2){
+    const corrected = Math.max(7, targetRowH + diff / rows.length);
+    rows.forEach(tr => { tr.style.height = corrected + 'px'; });
+  }
+  // 마지막 안전장치: 본문/표가 배정된 영역을 넘으면 본문 전체를 축소한다.
+  const measuredH = root.getBoundingClientRect().height;
+  if(measuredH > usableH){
+    const scale = Math.max(0.35, Math.min(1, (usableH - 4) / measuredH));
+    root.style.zoom = String(scale);
+    root.style.marginLeft = 'auto';
+    root.style.marginRight = 'auto';
+  }
+  // 하단 문구는 별도 고정 위치라 본문 축소와 무관하게 페이지 하단에 유지된다.
 }
 function stripActionCol(html){
   return html.replace(/<th class="no-print">[\s\S]*?<\/th>/g,'').replace(/<td class="no-print">[\s\S]*?<\/td>/g,'');
@@ -708,16 +763,34 @@ function printAuditTab(){
   };
   const getUsed = item=>r.items[item]||0;
   const getBud = item=>bud[item]||0;
-  const opinionTable = `<table><tbody><tr>
-    <th style="width:14%;">감사일자</th><td style="width:36%;">${escHtml(currentAudit.auditDate||'')}</td>
-    <th style="width:14%;">감사자</th><td>${escHtml(currentAudit.auditor||'')}</td>
+  const auditDateText = currentAudit.auditDate ? currentAudit.auditDate.replace(/^(\d{4})-(\d{2})-(\d{2})$/, '$1년 $2월 $3일') : '';
+  const auditorText = (currentAudit.auditor||'').replace(/\s+/g,'').split('').join(' ');
+  const opinionTable = `<table class="audit-signature"><tbody><tr>
+    <th style="width:14%;">감사일자</th><td style="width:36%;text-align:center;font-size:1.15em;">${escHtml(auditDateText)}</td>
+    <th style="width:14%;">감사자</th><td style="text-align:center;font-size:1.15em;position:relative;"><span style="position:absolute;right:.65em;top:50%;transform:translateY(-50%);white-space:nowrap;">( 서명 )</span><span style="display:inline-block;text-align:center;letter-spacing:.12em;">${escHtml(auditorText)}</span></td>
   </tr></tbody></table>`;
   const opinionBox = `<div class="opinion-box">${escHtml(currentAudit.opinion||'')}</div>`;
   const html = statHtml
-    + `<h2>수입 세부 분석</h2>` + groupedTableHtml({headerHtml:detailHeader, list:BUDGET_INCOME, getUsed, getBudget:getBud, cellsOf, withSubtotal:false, totalLabel:'수입총계', trueUsedTotal:r.incomeSum})
-    + `<h2>지출 세부 분석</h2>` + groupedTableHtml({headerHtml:detailHeader, list:BUDGET_EXPENSE, getUsed, getBudget:getBud, cellsOf, withSubtotal:true, totalLabel:'지출총계', trueUsedTotal:r.expenseSum})
-    + `<h2>감사 의견</h2>` + opinionTable + opinionBox;
+    + `<h2>수입세부내역</h2>` + groupedTableHtml({headerHtml:detailHeader, list:BUDGET_INCOME, getUsed, getBudget:getBud, cellsOf, withSubtotal:false, totalLabel:'수입총계', trueUsedTotal:r.incomeSum})
+    + `<h2>지출세부내역</h2>` + groupedTableHtml({headerHtml:detailHeader, list:BUDGET_EXPENSE, getUsed, getBudget:getBud, cellsOf, withSubtotal:true, totalLabel:'지출총계', trueUsedTotal:r.expenseSum})
+    + opinionTable + opinionBox;
   printHTML(title, html);
+}
+function exportAuditExcel(){
+  if(typeof XLSX==='undefined'){ showToast('엑셀 라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인하세요.', true); return; }
+  const year=Number($('#a-year').value), q=$('#a-quarter').value;
+  const {start,end,isFiscalStart}=getQuarterRange(year,q);
+  const r=aggregateRange(start,end,isFiscalStart), bud=getBudget(year);
+  const rows=[['회계감사보고'],['감사대상기간',start+' ~ '+end],[],['구분','상위분류','항목','기간합계','연간예산','사용률','잔액']];
+  for(const [label,list] of [['수입세부내역',BUDGET_INCOME],['지출세부내역',BUDGET_EXPENSE]]){
+    rows.push([label]);
+    list.forEach(({category,item})=>{const used=r.items[item]||0, b=bud[item]||0; rows.push(['',category,item,used,b,b?+(used/b*100).toFixed(1)+'%':'-',b-used]);});
+    rows.push(['', '', label+' 계', label==='수입세부내역'?r.incomeSum:r.expenseSum]);
+  }
+  rows.push([],['감사일자',currentAudit.auditDate||''],['감사자',currentAudit.auditor||''],['감사의견',currentAudit.opinion||'']);
+  const ws=XLSX.utils.aoa_to_sheet(rows); ws['!cols']=[{wch:18},{wch:18},{wch:28},{wch:15},{wch:15},{wch:12},{wch:15}];
+  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'회계감사');
+  XLSX.writeFile(wb,`회계감사_${year}_${q.slice(0,3)}.xlsx`);
 }
 function printBudgetTab(){
   const year = budgetYear();
@@ -757,6 +830,90 @@ function printCodesTab(){
 window.printData = printData;
 window.printSearchTab = printSearchTab;
 window.printMonthlyTab = printMonthlyTab;
+function exportBudgetExcel(){
+  if(typeof XLSX==='undefined'){showToast('엑셀 라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인하세요.',true);return;}
+  const year=budgetYear(), bud=getBudget(year), {start,end}=fiscalRangeOfYear(year), r=aggregateRange(start,end,true);
+  const rows=[
+    [`${year}년도 예산안`],
+    ['작년도 이월금',r.carry,'','예산연도',year],
+    ['수입예산합계',null,'','지출예산합계',null],
+    [],
+    ['구분','대분류','항목','연간예산(원)']
+  ];
+  const incomeStart=rows.length+1;
+  const appendBudgetSection=(sectionTitle,list)=>{
+    rows.push([sectionTitle]);
+    const sectionStart=rows.length+1;
+    let previousCategory=null, categoryStart=null;
+    const categoryRows=[];
+    for(const {category,item} of list){
+      if(category!==previousCategory){
+        if(previousCategory!==null){
+          const subtotalRow=rows.length+1;
+          rows.push(['',previousCategory+' 소계','',`=SUM(D${categoryStart}:D${subtotalRow-1})`]);
+          categoryRows.push(subtotalRow);
+        }
+        previousCategory=category; categoryStart=rows.length+1;
+      }
+      rows.push(['',category,item,Number(bud[item]||0)]);
+    }
+    if(previousCategory!==null){
+      const subtotalRow=rows.length+1;
+      rows.push(['',previousCategory+' 소계','',`=SUM(D${categoryStart}:D${subtotalRow-1})`]);
+      categoryRows.push(subtotalRow);
+    }
+    const sectionEnd=rows.length;
+    const totalRow=rows.length+1;
+    rows.push(['',sectionTitle+' 합계','',`=SUM(${categoryRows.map(n=>'D'+n).join(',')})`]);
+    return {start:sectionStart,end:sectionEnd,totalRow};
+  };
+  const income=appendBudgetSection('수입 예산',BUDGET_INCOME);
+  rows.push([]);
+  const expense=appendBudgetSection('지출 예산',BUDGET_EXPENSE);
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:12},{wch:24},{wch:32},{wch:18},{wch:14}];
+  ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:3}}];
+  // 상단 합계는 같은 시트의 합계 셀을 참조해 수정 가능한 예산표로 유지
+  const incomeTotalCell='D'+income.totalRow;
+  const expenseTotalCell='D'+expense.totalRow;
+  ws['B3']={t:'n',f:incomeTotalCell.replace('D','D'),z:'#,##0'};
+  ws['E3']={t:'n',f:expenseTotalCell,z:'#,##0'};
+  // 예산 금액/합계는 숫자 서식으로 표시
+  Object.keys(ws).forEach(addr=>{
+    if(addr[0]==='!' )return;
+    const cell=ws[addr];
+    if(cell && (addr[0]==='D'||addr[0]==='B'&&/^B[23]$/.test(addr)) && (cell.t==='n'||cell.f)) cell.z='#,##0';
+  });
+  ws['!freeze']={xSplit:0,ySplit:5,topLeftCell:'A6',activePane:'bottomLeft',state:'frozen'};
+  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'예산안');
+  XLSX.writeFile(wb,`예산안_${year}.xlsx`);
+}
+function exportActiveTabExcel(tabId){
+  if(typeof XLSX==='undefined'){showToast('엑셀 라이브러리를 불러오지 못했습니다.',true);return;}
+  const panel=document.getElementById(tabId); if(!panel)return;
+  const wb=XLSX.utils.book_new(); let count=0;
+  const tables=Array.from(panel.querySelectorAll('table'));
+  tables.forEach((table,i)=>{const clean=table.cloneNode(true);clean.querySelectorAll('.no-print,button,input,select,textarea').forEach(n=>n.remove());const ws=XLSX.utils.table_to_sheet(clean);XLSX.utils.book_append_sheet(wb,ws,('표'+(++count)).slice(0,31));});
+  if(!count){const rows=[[panel.querySelector('.panel-head h2')?.innerText||tabId],[panel.innerText]];XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'내용');}
+  XLSX.writeFile(wb,`${(panel.querySelector('.panel-head h2')?.innerText||tabId).replace(/[\\/:*?"<>|]/g,'_')}.xlsx`);
+}
+function printActiveTabPdf(tabId){
+  const map={'tab-data':printData,'tab-search':printSearchTab,'tab-monthly':printMonthlyTab,'tab-budget':printBudgetTab,'tab-audit':printAuditTab,'tab-codes':printCodesTab};
+  if(map[tabId]){map[tabId]();return;}
+  const panel=document.getElementById(tabId); if(!panel)return;
+  printHTML(panel.querySelector('.panel-head h2')?.innerText||'금전출납부',panel.innerHTML,false);
+}
+function installFileButtons(){
+  document.querySelectorAll('.tab-panel').forEach(panel=>{
+    if(panel.id==='tab-input'||panel.querySelector('.file-generation-controls'))return;
+    const controls=document.createElement('div'); controls.className='btn-row file-generation-controls no-print'; controls.style.cssText='margin-top:10px;justify-content:flex-end';
+    const excel=document.createElement('button'); excel.className='btn btn-outline'; excel.textContent='엑셀 파일 생성'; excel.addEventListener('click',()=>panel.id==='tab-audit'?exportAuditExcel():panel.id==='tab-budget'?exportBudgetExcel():exportActiveTabExcel(panel.id));
+    const pdf=document.createElement('button'); pdf.className='btn btn-outline'; pdf.textContent='PDF 파일 생성'; pdf.addEventListener('click',()=>printActiveTabPdf(panel.id));
+    controls.append(excel,pdf); panel.appendChild(controls);
+  });
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',installFileButtons);else installFileButtons();
+
 window.printAuditTab = printAuditTab;
 window.printCodesTab = printCodesTab;
 window.printBudgetTab = printBudgetTab;
