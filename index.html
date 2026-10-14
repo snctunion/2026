@@ -665,8 +665,9 @@ function fitRowsToPage(idoc, marginMm){
   const pxPerMm = 96/25.4;
   // 본문/표만 이 영역에 맞춘다. 예산안 보고 문구와 조합 이름표는 페이지 하단에 고정한다.
   // 데이터·검색 메뉴는 printHTML(..., false)로 호출되어 이 자동 맞춤 대상이 아니다.
-  // 하단 15mm는 보고 문구와 조합 이름표 전용으로 비워 둔다. 본문/표는 그 위에서 한 장에 맞춘다.
-  const usableH = (297 - 2*marginMm - 15) * pxPerMm;
+  // 하단 문구 높이에 필요한 공간만 확보한다. 기존 15mm 예약으로 생기던 과도한 아래 빈 공간을 줄인다.
+  const FOOTER_RESERVED_MM = 7;
+  const usableH = (297 - 2*marginMm - FOOTER_RESERVED_MM) * pxPerMm;
   rows.forEach(tr => { tr.style.height = ''; });
   tables.forEach(t => { t.style.fontSize = ''; });
   // Measure the non-table content first; table rows absorb the remaining page height.
