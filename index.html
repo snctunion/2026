@@ -3,22 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>조합사무국 v1.01</title>
+<title>조합사무국 v1.02</title>
 <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png">
 <link rel="apple-touch-icon" sizes="180x180" href="./icon-180.png">
 <link rel="manifest" href="./manifest.webmanifest">
-<meta name="theme-color" content="#7026D8">
+<meta name="theme-color" content="#174A35">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{
-  --paper:#E7DEF3; --paper-dim:#DFD2ED; --ink:#160F26; --ink-soft:#584A76;
-  --pri:#8342E0; --pri-deep:#602FAE; --accent:#C98EF2; --accent-light:#E4CDF5;
-  --line:#CBB2E6; --income:#2D8362; --income-bg:#C9E5D5; --expense:#AC4269; --expense-bg:#EFC5D7;
-  --white:#FDFBFF; --radius:10px;
+  --paper:#E7EEE8; --paper-dim:#DCE7DE; --ink:#17291E; --ink-soft:#53685A;
+  --pri:#174A35; --pri-deep:#0E3525; --accent:#8FAF98; --accent-light:#D6E4D8;
+  --line:#B8CCBC; --income:#28704B; --income-bg:#D2E7D8; --expense:#AC4269; --expense-bg:#EFC5D7;
+  --white:#FCFEFC; --radius:10px;
 }
 *{box-sizing:border-box;}
 html{scroll-padding-top:env(safe-area-inset-top,0px);}
@@ -32,17 +32,17 @@ h1,h2,h3{font-family:'Noto Serif KR', Georgia, serif; margin:0;}
 #app{display:flex; flex-direction:column; align-items:stretch; width:100%; min-height:100vh; min-width:0;}
 /* 상단 통합 헤더: PC에서도 왼쪽 사이드바 대신 상단 메뉴 사용 */
 #sidebar{
-  width:100%; min-width:0; background:linear-gradient(110deg,var(--pri-deep),#3A1F73); color:#F5ECFF;
+  width:100%; min-width:0; background:linear-gradient(110deg,var(--pri-deep),#174A35); color:#F2F8F3;
   padding:12px 22px; display:flex; flex-wrap:wrap; align-items:center; gap:10px 18px;
   box-shadow:0 2px 10px rgba(40,20,70,.14); position:relative; z-index:20;
 }
 #sidebar .brand{order:1; flex:0 0 auto; padding:2px 10px 2px 0; border:0;}
 #sidebar .brand b{font-family:'Noto Serif KR',serif; font-size:18px; display:block; line-height:1.3; white-space:nowrap;}
-#sidebar .brand span{font-size:12px; color:#D5C3F5; display:block; margin-top:3px;}
+#sidebar .brand span{font-size:12px; color:#C4D8C8; display:block; margin-top:3px;}
 .lockbox{order:3; margin:0 0 0 auto; padding:7px 10px; border-radius:8px; background:rgba(255,255,255,.08); font-size:12px; display:flex; align-items:center; gap:10px; min-width:0;}
 .lockbox .st{font-weight:700; display:flex; align-items:center; gap:6px; min-width:0;}
 .lockbox .st span{max-width:190px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-.lockbox a{color:#D5C3F5; font-size:11.5px; cursor:pointer; text-decoration:underline; display:block; white-space:nowrap;}
+.lockbox a{color:#C4D8C8; font-size:11.5px; cursor:pointer; text-decoration:underline; display:block; white-space:nowrap;}
 #btn-app-refresh{border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#fff;border-radius:7px;padding:6px 9px;font:600 11.5px 'Noto Sans KR',sans-serif;cursor:pointer;white-space:nowrap;}
 #btn-app-refresh:hover{background:rgba(255,255,255,.23);}
 #top-nav-items{order:2; display:flex; flex:1 1 620px; align-items:center; justify-content:center; gap:6px; min-width:0;}
@@ -51,7 +51,7 @@ h1,h2,h3{font-family:'Noto Serif KR', Georgia, serif; margin:0;}
 .main-nav-btn.active{background:#fff;color:var(--pri-deep);font-weight:800}
 #sub-nav{order:4;display:flex;flex:1 0 100%;gap:6px;flex-wrap:wrap;padding-top:8px;border-top:1px solid rgba(255,255,255,.18)}
 #sub-nav[hidden]{display:none!important} #sub-nav .navbtn[hidden]{display:none!important} #sub-nav .navbtn{flex:0 0 auto}
-.app-version{font:600 11px 'Noto Sans KR',sans-serif;color:#D5C3F5;vertical-align:middle;margin-left:5px}
+.app-version{font:600 11px 'Noto Sans KR',sans-serif;color:#C4D8C8;vertical-align:middle;margin-left:5px}
 #login-overlay{
   position:fixed; inset:0; background:rgba(37,20,64,.72); backdrop-filter:blur(2px);
   display:none; align-items:center; justify-content:center; z-index:9999; padding:20px;
@@ -68,7 +68,7 @@ h1,h2,h3{font-family:'Noto Serif KR', Georgia, serif; margin:0;}
 #login-box .skip{display:block; margin-top:14px; font-size:12.5px; color:var(--ink-soft); cursor:pointer; text-decoration:underline; background:none; border:none;}
 .navbtn{
   display:inline-flex; align-items:center; justify-content:center; flex:1 1 auto; min-width:0; text-align:center;
-  background:rgba(255,255,255,.055); border:1px solid rgba(255,255,255,.15); color:#E9DDFB;
+  background:rgba(255,255,255,.055); border:1px solid rgba(255,255,255,.15); color:#E1EEE4;
   padding:9px 12px; font-size:13.5px; cursor:pointer; border-radius:8px; font-family:inherit;
   white-space:nowrap; min-height:40px; transition:background .15s ease, color .15s ease;
 }
@@ -158,8 +158,8 @@ tbody tr:hover{background:var(--paper-dim);}
 
 .audit-banner{background:linear-gradient(135deg,var(--pri-deep),var(--pri)); color:#fff; border-radius:var(--radius); padding:20px 24px; margin-bottom:16px;}
 .audit-banner h3{font-family:'Noto Serif KR',serif; font-size:19px;}
-.audit-banner p{margin:6px 0 0; font-size:13.5px; color:#EDE0FF;}
-.audit-banner .period{margin-top:10px; font-size:13px; color:#FBE9FF; font-weight:600;}
+.audit-banner p{margin:6px 0 0; font-size:13.5px; color:#E1EEE4;}
+.audit-banner .period{margin-top:10px; font-size:13px; color:#F2F8F3; font-weight:600;}
 
 .cat-badge{font-size:11.5px; color:var(--ink-soft); background:var(--paper-dim); padding:2px 7px; border-radius:5px;}
 .subtotal-row td{background:var(--paper-dim); font-weight:700;}
@@ -195,30 +195,30 @@ tbody tr:hover{background:var(--paper-dim);}
 }
 
 /* ===== UI COLOR REFRESH ===== */
-input,select,textarea{background:#FDFBFF;}
+input,select,textarea{background:#FCFEFC;}
 
-table{background:#FDFBFF;}
-th,td{background:#FDFBFF;border-bottom:1px solid var(--line);}
-th{background:#F1E8FA;color:#4D3D68;}
-tbody tr:nth-child(even) td{background:#FAF7FD;}
-tbody tr:hover td{background:#F2E8FA;}
-.subtotal-row td{background:#EEE3F7 !important;}
-.grand-row td{background:#E2CFF4 !important;}
+table{background:#FCFEFC;}
+th,td{background:#FCFEFC;border-bottom:1px solid var(--line);}
+th{background:#E0EAE2;color:#244A32;}
+tbody tr:nth-child(even) td{background:#F4F8F4;}
+tbody tr:hover td{background:#EAF2EB;}
+.subtotal-row td{background:#E1ECE3 !important;}
+.grand-row td{background:#CFE1D2 !important;}
 
 .btn{border-width:1px;transition:background .15s ease,border-color .15s ease,transform .05s ease;}
 .btn:active{transform:translateY(1px);}
 
 .btn-primary,#f-submit,#btn-login{
-  background:#6F35B8;border-color:#6F35B8;color:#fff;
+  background:#174A35;border-color:#174A35;color:#fff;
 }
 .btn-primary:hover,#f-submit:hover,#btn-login:hover{
-  background:#51258E;border-color:#51258E;
+  background:#0E3525;border-color:#0E3525;
 }
 .btn-outline{
-  background:#F1EAF8;border-color:#B99AD8;color:#49345F;
+  background:#E6EFE7;border-color:#B8CCBC;color:#244A32;
 }
 .btn-outline:hover{
-  background:#DCC8EC;border-color:#8D63B0;
+  background:#D3E3D6;border-color:#8FAF98;
 }
 .btn-danger,#btn-reset-all{
   background:#B83E5A;border-color:#B83E5A;color:#fff;
@@ -303,7 +303,7 @@ tbody tr:hover td{background:#F2E8FA;}
 <div id="login-overlay">
   <div id="login-box">
     <div class="icon">📒</div>
-    <h3>조합사무국 <small class="app-version">v1.01</small></h3>
+    <h3>조합사무국 <small class="app-version">v1.02</small></h3>
     <p>등록된 계정으로 로그인하세요.<br>계정은 관리자가 Firebase 콘솔에서 직접 등록합니다.</p>
     <input type="email" id="login-email" placeholder="이메일" autocomplete="username">
     <input type="password" id="login-password" placeholder="비밀번호" autocomplete="current-password" style="margin-top:8px;">
@@ -313,7 +313,7 @@ tbody tr:hover td{background:#F2E8FA;}
 </div>
 <div id="app" style="display:none;">
   <nav id="sidebar">
-    <div class="brand"><b>조합사무국 <small class="app-version">v1.01</small></b><span>SNCT UNION 사무업무</span></div>
+    <div class="brand"><b>조합사무국 <small class="app-version">v1.02</small></b><span>SNCT UNION 사무업무</span></div>
     <div class="lockbox">
       <div class="st" id="lock-status">🔓 <span id="lock-email"></span></div>
       <button type="button" id="btn-app-refresh" title="앱 화면과 데이터를 다시 불러옵니다">앱 새로고침</button>
@@ -471,7 +471,7 @@ tbody tr:hover td{background:#F2E8FA;}
 </div>
 
 <script type="module">
-const APP_VERSION = '1.01'; // 이후 버전 변경 시 이 값만 올리면 화면 표시를 함께 갱신
+const APP_VERSION = '1.02'; // 이후 버전 변경 시 이 값만 올리면 화면 표시를 함께 갱신
 document.title = `조합사무국 v${APP_VERSION}`;
 document.querySelectorAll('.app-version').forEach(el=>el.textContent=`v${APP_VERSION}`);
 const SEED_ENTRIES = [{"date": "2026-06-01", "type": "수입", "category": "기타수입", "item": "이월금", "method": "계좌잔액", "amount": 9491981, "note": "전년도이월금"}, {"date": "2026-06-01", "type": "수입", "category": "기타수입", "item": "찬조수입", "method": "계좌입금", "amount": 50000, "note": "후원수입(연합인천지역본부)"}, {"date": "2026-06-01", "type": "수입", "category": "기타수입", "item": "찬조수입", "method": "계좌입금", "amount": 750000, "note": "후원수입(연합15개회원사)"}, {"date": "2026-06-01", "type": "수입", "category": "기타수입", "item": "찬조수입", "method": "계좌입금", "amount": 50000, "note": "후원수입(한국노총인천지역본부)"}, {"date": "2026-06-01", "type": "지출", "category": "회의비", "item": "대의원대회", "method": "체크카드", "amount": 350000, "note": "상품권구입"}, {"date": "2026-06-01", "type": "지출", "category": "유지비", "item": "비품비", "method": "체크카드", "amount": 29160, "note": "음료구입"}, {"date": "2026-06-01", "type": "수입", "category": "기타수입", "item": "찬조수입", "method": "계좌입금", "amount": 50000, "note": "후원수입(영창운수)"}, {"date": "2026-06-01", "type": "지출", "category": "회의비", "item": "대의원대회", "method": "체크카드", "amount": 405000, "note": "회의후식사비(10명)1차"}, {"date": "2026-06-01", "type": "지출", "category": "회의비", "item": "대의원대회", "method": "체크카드", "amount": 62000, "note": "회의후식사비 2차"}, {"date": "2026-06-01", "type": "지출", "category": "회의비", "item": "대의원대회", "method": "체크카드", "amount": 15300, "note": "대리비"}, {"date": "2026-06-01", "type": "지출", "category": "회의비", "item": "대의원대회", "method": "체크카드", "amount": 15300, "note": "대리비"}, {"date": "2026-06-01", "type": "지출", "category": "회의비", "item": "대의원대회", "method": "체크카드", "amount": 25500, "note": "대리비"}, {"date": "2026-06-01", "type": "지출", "category": "회의비", "item": "대의원대회", "method": "체크카드", "amount": 25500, "note": "대리비"}, {"date": "2026-06-02", "type": "지출", "category": "유지비", "item": "차량유지비", "method": "체크카드", "amount": 100000, "note": "주유비"}, {"date": "2026-06-05", "type": "수입", "category": "고정수입", "item": "조합비", "method": "계좌입금", "amount": 2100470, "note": "5월"}, {"date": "2026-06-05", "type": "지출", "category": "의무금", "item": "노총인천본부", "method": "계좌이체", "amount": 45600, "note": "한노총"}, {"date": "2026-06-05", "type": "지출", "category": "의무금", "item": "연합연맹", "method": "계좌이체", "amount": 116000, "note": "전국연합/인천본부"}, {"date": "2026-06-05", "type": "지출", "category": "의무금", "item": "하역사", "method": "계좌이체", "amount": 70000, "note": "하역검수협의회"}, {"date": "2026-06-05", "type": "지출", "category": "의무금", "item": "중동구", "method": "계좌이체", "amount": 40000, "note": "중동구협의회"}, {"date": "2026-06-05", "type": "지출", "category": "유지비", "item": "업무추진비", "method": "계좌이체", "amount": 500000, "note": "위원장"}, {"date": "2026-06-05", "type": "지출", "category": "유지비", "item": "사무보조비", "method": "계좌이체", "amount": 100000, "note": "사무국장"}, {"date": "2026-06-08", "type": "지출", "category": "행사비", "item": "워크샵비", "method": "계좌이체", "amount": 100000, "note": "노총간부교육참가비"}, {"date": "2026-06-09", "type": "지출", "category": "행사비", "item": "워크샵비", "method": "계좌이체", "amount": 150000, "note": "노총간부교육3일충장비"}, {"date": "2026-06-10", "type": "지출", "category": "회의비", "item": "운영회의", "method": "법인카드", "amount": 99000, "note": "운영회의(4/27)후식사2차"}, {"date": "2026-06-10", "type": "지출", "category": "회의비", "item": "운영회의", "method": "법인카드", "amount": 324000, "note": "운영회의(4/27)후식사"}, {"date": "2026-06-10", "type": "지출", "category": "회의비", "item": "운영회의", "method": "법인카드", "amount": 25500, "note": "운영회의(4/27)후대리1건"}, {"date": "2026-06-10", "type": "지출", "category": "유지비", "item": "차량유지비", "method": "법인카드", "amount": 99500, "note": "주유비(5/15)"}, {"date": "2026-06-13", "type": "수입", "category": "기타수입", "item": "결산이자", "method": "계좌입금", "amount": 4878, "note": "잔고이자"}, {"date": "2026-06-15", "type": "지출", "category": "행사비", "item": "찬조비", "method": "계좌이체", "amount": 100000, "note": "회원사후원(스태츠칩팩코리아)"}, {"date": "2026-06-16", "type": "지출", "category": "유지비", "item": "비품비", "method": "계좌이체", "amount": 100530, "note": "다과구입(사무장비용처리)"}, {"date": "2026-06-16", "type": "지출", "category": "회의비", "item": "각종회의비", "method": "체크카드", "amount": 265000, "note": "2차협상후식사1차"}, {"date": "2026-06-16", "type": "지출", "category": "활동비", "item": "조직활동비", "method": "체크카드", "amount": 15300, "note": "2차협상후대리비"}, {"date": "2026-06-16", "type": "지출", "category": "회의비", "item": "각종회의비", "method": "체크카드", "amount": 113500, "note": "2차협상후식사2차"}, {"date": "2026-06-16", "type": "지출", "category": "회의비", "item": "각종회의비", "method": "체크카드", "amount": 48800, "note": "2차협상후식사3차"}, {"date": "2026-06-16", "type": "지출", "category": "활동비", "item": "조직활동비", "method": "체크카드", "amount": 6400, "note": "사무국장택시오사용17일입금"}, {"date": "2026-06-16", "type": "지출", "category": "활동비", "item": "조직활동비", "method": "체크카드", "amount": 25500, "note": "2차협상후대리비"}, {"date": "2026-06-17", "type": "수입", "category": "기타수입", "item": "찬조수입", "method": "체크카드", "amount": 6400, "note": "16일사무국장오사용분처리"}, {"date": "2026-06-20", "type": "지출", "category": "활동비", "item": "조직활동비", "method": "계좌이체", "amount": 75000, "note": "이상필대표모친상 근조화환"}, {"date": "2026-06-22", "type": "지출", "category": "활동비", "item": "조직활동비", "method": "체크카드", "amount": 30000, "note": "3차협상 후 식사비"}, {"date": "2026-06-22", "type": "지출", "category": "활동비", "item": "조직활동비", "method": "체크카드", "amount": 25500, "note": "3차협상 후 대리비"}, {"date": "2026-06-29", "type": "지출", "category": "활동비", "item": "조직활동비", "method": "체크카드", "amount": 170000, "note": "4차협상 후 식사1차"}, {"date": "2026-06-29", "type": "지출", "category": "활동비", "item": "조직활동비", "method": "체크카드", "amount": 103000, "note": "4차협상 후 식사2차"}, {"date": "2026-06-29", "type": "지출", "category": "활동비", "item": "조직활동비", "method": "체크카드", "amount": 15300, "note": "4차협상 후 대리비"}, {"date": "2026-06-29", "type": "지출", "category": "활동비", "item": "조직활동비", "method": "체크카드", "amount": 25500, "note": "4차협상 후 대리비"}, {"date": "2026-07-03", "type": "수입", "category": "고정수입", "item": "조합비", "method": "계좌입금", "amount": 2100470, "note": "6월"}, {"date": "2026-07-06", "type": "수입", "category": "기타수입", "item": "찬조수입", "method": "계좌입금", "amount": 74000, "note": "오사용분 7/6입금(위원장)"}, {"date": "2026-07-06", "type": "지출", "category": "의무금", "item": "연합연맹", "method": "계좌이체", "amount": 116000, "note": "전국연합/인천본부"}, {"date": "2026-07-06", "type": "지출", "category": "의무금", "item": "노총인천본부", "method": "계좌이체", "amount": 45600, "note": "한노총"}, {"date": "2026-07-06", "type": "지출", "category": "의무금", "item": "하역사", "method": "계좌이체", "amount": 70000, "note": "하역검수협의회"}, {"date": "2026-07-06", "type": "지출", "category": "의무금", "item": "중동구", "method": "계좌이체", "amount": 40000, "note": "중동구협의회"}, {"date": "2026-07-06", "type": "지출", "category": "유지비", "item": "업무추진비", "method": "계좌이체", "amount": 500000, "note": "위원장"}, {"date": "2026-07-06", "type": "지출", "category": "유지비", "item": "사무보조비", "method": "계좌이체", "amount": 100000, "note": "사무국장"}, {"date": "2026-07-06", "type": "지출", "category": "활동비", "item": "조직활동비", "method": "체크카드", "amount": 121000, "note": "5차협상 후 식사1"}, {"date": "2026-07-06", "type": "지출", "category": "활동비", "item": "조직활동비", "method": "체크카드", "amount": 82000, "note": "5차협상 후 식사2"}, {"date": "2026-07-06", "type": "지출", "category": "활동비", "item": "조직활동비", "method": "체크카드", "amount": 40000, "note": "5차협상 후 식사3"}, {"date": "2026-07-06", "type": "지출", "category": "활동비", "item": "조직활동비", "method": "체크카드", "amount": 15300, "note": "5차협상 후 대리1"}, {"date": "2026-07-06", "type": "지출", "category": "활동비", "item": "조직활동비", "method": "체크카드", "amount": 25500, "note": "5차협상 후 대리2"}, {"date": "2026-07-10", "type": "지출", "category": "유지비", "item": "차량유지비", "method": "법인카드", "amount": 99500, "note": "주유비"}, {"date": "2026-08-03", "type": "지출", "category": "유지비", "item": "비품비", "method": "계좌이체", "amount": 4400, "note": "공동인증서발급수수료"}, {"date": "2026-08-03", "type": "지출", "category": "유지비", "item": "비품비", "method": "계좌이체", "amount": 105230, "note": "다과구입(사무국장비용처리)"}, {"date": "2026-08-04", "type": "지출", "category": "의무금", "item": "연합연맹", "method": "계좌이체", "amount": 116000, "note": "전국연합/인천본부"}, {"date": "2026-08-04", "type": "지출", "category": "의무금", "item": "노총인천본부", "method": "계좌이체", "amount": 45600, "note": "한노총"}, {"date": "2026-08-04", "type": "지출", "category": "의무금", "item": "하역사", "method": "계좌이체", "amount": 70000, "note": "하역검수협의회"}, {"date": "2026-08-04", "type": "지출", "category": "의무금", "item": "중동구", "method": "계좌이체", "amount": 40000, "note": "중동구협의회"}, {"date": "2026-08-04", "type": "지출", "category": "유지비", "item": "업무추진비", "method": "계좌이체", "amount": 500000, "note": "위원장"}, {"date": "2026-08-04", "type": "지출", "category": "유지비", "item": "사무보조비", "method": "계좌이체", "amount": 100000, "note": "사무국장"}, {"date": "2026-08-05", "type": "수입", "category": "고정수입", "item": "조합비", "method": "계좌입금", "amount": 2100470, "note": "7월"}, {"date": "2026-08-05", "type": "지출", "category": "회의비", "item": "집행회의", "method": "체크카드", "amount": 45900, "note": "집행부임협회의후대리비"}, {"date": "2026-08-07", "type": "지출", "category": "회의비", "item": "집행회의", "method": "체크카드", "amount": 30600, "note": "집행부임협회의후대리비"}, {"date": "2026-08-10", "type": "지출", "category": "유지비", "item": "차량유지비", "method": "법인카드", "amount": 99500, "note": "주유"}, {"date": "2026-08-10", "type": "지출", "category": "행사비", "item": "찬조비", "method": "법인카드", "amount": 74000, "note": "위원장오사용분(7/6입금)"}, {"date": "2026-08-10", "type": "지출", "category": "유지비", "item": "비품비", "method": "법인카드", "amount": 400, "note": "sms서비스이용료"}, {"date": "2026-08-10", "type": "지출", "category": "회의비", "item": "집행회의", "method": "체크카드", "amount": 25500, "note": "집행부임협회의후대리"}, {"date": "2026-08-13", "type": "지출", "category": "회의비", "item": "집행회의", "method": "체크카드", "amount": 143000, "note": "6차협상후식사"}, {"date": "2026-08-13", "type": "지출", "category": "회의비", "item": "집행회의", "method": "체크카드", "amount": 15300, "note": "대리비1"}, {"date": "2026-08-13", "type": "지출", "category": "회의비", "item": "집행회의", "method": "체크카드", "amount": 25500, "note": "대리비2"}, {"date": "2026-08-18", "type": "지출", "category": "행사비", "item": "찬조비", "method": "계좌이체", "amount": 50000, "note": "후원금(우련통운총회)"}, {"date": "2026-08-18", "type": "지출", "category": "행사비", "item": "찬조비", "method": "계좌이체", "amount": 20000, "note": "후원금(우련통운전별금)"}, {"date": "2026-08-18", "type": "지출", "category": "행사비", "item": "찬조비", "method": "계좌이체", "amount": 20000, "note": "후원금(대한제분전별금)"}, {"date": "2026-08-18", "type": "지출", "category": "회의비", "item": "각종회의비", "method": "체크카드", "amount": 25500, "note": "임금체결대리비1"}, {"date": "2026-08-18", "type": "지출", "category": "회의비", "item": "각종회의비", "method": "체크카드", "amount": 20400, "note": "임금체결대리비2"}, {"date": "2026-08-19", "type": "지출", "category": "워크샵비", "item": "워크샵비", "method": "체크카드", "amount": 50000, "note": "하계연친회참가비"}, {"date": "2026-08-19", "type": "지출", "category": "활동비", "item": "조직활동비", "method": "체크카드", "amount": 25500, "note": "중동구협의회대리비"}, {"date": "2026-08-24", "type": "지출", "category": "유지비", "item": "비품비", "method": "계좌이체", "amount": 800, "note": "SMS서비스이용료"}, {"date": "2026-08-26", "type": "지출", "category": "워크샵비", "item": "워크샵비", "method": "계좌이체", "amount": 150000, "note": "연친회3일출장비(위원장)"}, {"date": "2026-09-03", "type": "지출", "category": "활동비", "item": "부처활동비", "method": "체크카드", "amount": 239000, "note": "징계위후(김성용선임)식사"}, {"date": "2026-09-03", "type": "지출", "category": "활동비", "item": "부처활동비", "method": "체크카드", "amount": 54000, "note": "징계위후(김성용선임)식사2"}, {"date": "2026-09-04", "type": "수입", "category": "고정수입", "item": "조합비", "method": "계좌입금", "amount": 232780, "note": "조합비소급분"}, {"date": "2026-09-04", "type": "수입", "category": "고정수입", "item": "조합비", "method": "계좌입금", "amount": 2153860, "note": "조합비8월분"}, {"date": "2026-09-08", "type": "지출", "category": "의무금", "item": "연합연맹", "method": "계좌이체", "amount": 116000, "note": "전국연합/인천본부(9월)"}, {"date": "2026-09-08", "type": "지출", "category": "의무금", "item": "노총인천본부", "method": "계좌이체", "amount": 45600, "note": "한노총(9월)"}, {"date": "2026-09-08", "type": "지출", "category": "의무금", "item": "하역사", "method": "계좌이체", "amount": 70000, "note": "하역사협의회(9월)"}, {"date": "2026-09-08", "type": "지출", "category": "의무금", "item": "중동구", "method": "계좌이체", "amount": 40000, "note": "중동구협의회(9월)"}, {"date": "2026-09-08", "type": "지출", "category": "유지비", "item": "업무추진비", "method": "계좌이체", "amount": 500000, "note": "위원장(9월)"}, {"date": "2026-09-08", "type": "지출", "category": "유지비", "item": "사무보조비", "method": "계좌이체", "amount": 100000, "note": "사무국장(9월)"}, {"date": "2026-09-10", "type": "지출", "category": "유지비", "item": "차량유지비", "method": "법인카드", "amount": 99500, "note": "주유비(8/4)"}, {"date": "2026-09-10", "type": "지출", "category": "회의비", "item": "집행회의", "method": "법인카드", "amount": 90000, "note": "임금회의(8/7)"}, {"date": "2026-09-10", "type": "지출", "category": "회의비", "item": "집행회의", "method": "법인카드", "amount": 94000, "note": "임금회의(8/10)"}, {"date": "2026-09-10", "type": "지출", "category": "유지비", "item": "차량유지비", "method": "법인카드", "amount": 99500, "note": "주유비(8/20)"}, {"date": "2026-09-10", "type": "지출", "category": "유지비", "item": "비품비", "method": "법인카드", "amount": 400, "note": "SMS서비스이용료(8/18)"}, {"date": "2026-09-16", "type": "지출", "category": "행사비", "item": "찬조비", "method": "계좌이체", "amount": 50000, "note": "후원금(선광대의원대회)"}, {"date": "2026-09-16", "type": "지출", "category": "유지비", "item": "비품비", "method": "계좌이체", "amount": 81320, "note": "다과구입(사무국장비용처리)"}];
