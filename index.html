@@ -333,7 +333,7 @@ tbody tr:hover td{background:#EAF2EB;}
 .btn:hover,.global-print-btn:hover,.main-nav-btn:hover,.navbtn:hover{filter:brightness(1.07);box-shadow:inset 0 1px 0 rgba(255,255,255,.75),0 3px 0 rgba(18,42,27,.18),0 5px 10px rgba(0,0,0,.16);}
 .btn:active,.global-print-btn:active,.main-nav-btn:active,.navbtn:active{transform:translateY(1px);box-shadow:inset 0 1px 3px rgba(0,0,0,.18),0 1px 0 rgba(18,42,27,.15);}
 
-/* v1.61: DATA 입력/조회 팝업 */
+/* v1.62: DATA 메뉴에 조회 버튼과 기존 작업 버튼 상시 표시 */
 #tab-input.entry-modal{display:block!important;position:fixed;z-index:10000;inset:3vh 3vw;overflow:auto;background:#fff;padding:20px;border:1px solid #9aa99f;border-radius:12px;box-shadow:0 12px 48px rgba(0,0,0,.35)}
 #data-filter-card.search-modal{display:block!important;position:fixed;z-index:10001;left:50%;top:50%;transform:translate(-50%,-50%);width:min(92vw,650px);max-height:88vh;overflow:auto;background:#fff;padding:20px;border:1px solid #9aa99f;border-radius:12px;box-shadow:0 12px 48px rgba(0,0,0,.35)}
 #data-filter-card[hidden]{display:none!important}
@@ -424,14 +424,22 @@ tbody tr:hover td{background:#EAF2EB;}
 
     <section id="tab-data" class="tab-panel">
       <div class="panel-head"><h2>DATA</h2><p>전체 거래 내역과 잔액입니다.</p></div>
-      <div class="btn-row no-print" style="margin-bottom:12px"><button type="button" class="btn btn-primary" id="btn-open-entry">입력</button></div>
+      <div class="btn-row no-print" style="margin-bottom:12px">
+        <button type="button" class="btn btn-primary" id="btn-open-entry">입력</button>
+        <button type="button" class="btn btn-primary" id="btn-search">조회</button>
+        <button class="btn btn-outline btn-sm" id="btn-data-all">전체</button>
+        <button class="btn btn-outline btn-sm" id="btn-import">파일 업로드</button><input type="file" id="excel-file" accept=".xlsx,.xls,.csv" style="display:none;">
+        <button class="btn btn-outline btn-sm" id="btn-data-edit-selected">선택 수정</button>
+        <button class="btn btn-danger btn-sm" id="btn-data-delete-selected">선택 삭제</button>
+        <button class="btn btn-danger btn-sm" id="btn-reset-all">전체 초기화</button>
+      </div>
       <div class="card" id="data-filter-card" hidden>
         <div class="grid2">
           <div class="field"><label>시작일</label><input type="date" id="s-start"></div>
           <div class="field"><label>종료일</label><input type="date" id="s-end"></div>
         </div>
         <div class="field"><label>통합검색어</label><input type="text" id="s-keyword" placeholder="계정과목·적요·출납방식·비고"></div>
-        <div class="btn-row no-print"><button class="btn btn-outline btn-sm" id="btn-data-all">전체</button><button class="btn btn-primary btn-sm" id="btn-search">조회 조건</button><button class="btn btn-primary btn-sm" id="btn-run-search">검색 실행</button><button class="btn btn-outline btn-sm" id="btn-close-search">닫기</button><button class="btn btn-outline btn-sm" id="btn-import">파일 업로드</button><input type="file" id="excel-file" accept=".xlsx,.xls,.csv" style="display:none;"><button class="btn btn-outline btn-sm" id="btn-data-edit-selected">선택 수정</button><button class="btn btn-danger btn-sm" id="btn-data-delete-selected">선택 삭제</button><button class="btn btn-danger btn-sm" id="btn-reset-all">전체 초기화</button></div>
+        <div class="btn-row no-print"><button class="btn btn-primary btn-sm" id="btn-run-search">검색 실행</button><button class="btn btn-outline btn-sm" id="btn-close-search">닫기</button></div>
       </div>
       <div id="bank-preview"></div>
       <div id="search-stats" class="stat-row" hidden></div>
