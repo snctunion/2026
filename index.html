@@ -333,7 +333,7 @@ tbody tr:hover td{background:#EAF2EB;}
 .btn:hover,.global-print-btn:hover,.main-nav-btn:hover,.navbtn:hover{filter:brightness(1.07);box-shadow:inset 0 1px 0 rgba(255,255,255,.75),0 3px 0 rgba(18,42,27,.18),0 5px 10px rgba(0,0,0,.16);}
 .btn:active,.global-print-btn:active,.main-nav-btn:active,.navbtn:active{transform:translateY(1px);box-shadow:inset 0 1px 3px rgba(0,0,0,.18),0 1px 0 rgba(18,42,27,.15);}
 
-/* v1.62: DATA 메뉴에 조회 버튼과 기존 작업 버튼 상시 표시 */
+/* v1.63: 이전 버전 기반 조회 조건 팝업 표시/닫기 동작 수정 */
 #tab-input.entry-modal{display:block!important;position:fixed;z-index:10000;inset:3vh 3vw;overflow:auto;background:#fff;padding:20px;border:1px solid #9aa99f;border-radius:12px;box-shadow:0 12px 48px rgba(0,0,0,.35)}
 #data-filter-card.search-modal{display:block!important;position:fixed;z-index:10001;left:50%;top:50%;transform:translate(-50%,-50%);width:min(92vw,650px);max-height:88vh;overflow:auto;background:#fff;padding:20px;border:1px solid #9aa99f;border-radius:12px;box-shadow:0 12px 48px rgba(0,0,0,.35)}
 #data-filter-card[hidden]{display:none!important}
@@ -1867,9 +1867,10 @@ function renderSearch(){
     <td>${e.category}</td><td>${e.item}</td><td>${e.method||''}</td>
     <td class="num">${fmt(e.amount)}</td><td class="num">${fmt(e.balance)}</td><td>${e.note||''}</td></tr>`).join('') + `</tbody></table></div>`;
 }
-$('#btn-search').addEventListener('click', ()=>$('#data-filter-card').classList.add('search-modal'));
-$('#btn-run-search').addEventListener('click', ()=>{renderSearch();$('#data-filter-card').classList.remove('search-modal');});
-$('#btn-close-search').addEventListener('click', ()=>$('#data-filter-card').classList.remove('search-modal'));
+$('#btn-search').addEventListener('click', ()=>{const modal=$('#data-filter-card'); modal.hidden=false; modal.classList.add('search-modal'); $('#s-keyword').focus();});
+$('#btn-run-search').addEventListener('click', ()=>{renderSearch();const modal=$('#data-filter-card');modal.classList.remove('search-modal');modal.hidden=true;});
+$('#btn-close-search').addEventListener('click', ()=>{const modal=$('#data-filter-card');modal.classList.remove('search-modal');modal.hidden=true;});
+document.addEventListener('keydown', e=>{if(e.key==='Escape'){const modal=$('#data-filter-card');if(!modal.hidden){modal.classList.remove('search-modal');modal.hidden=true;}}});
 $('#btn-open-entry').addEventListener('click', ()=>{resetForm();$('#tab-input').classList.add('entry-modal');});
 $('#f-modal-close').addEventListener('click', ()=>$('#tab-input').classList.remove('entry-modal'));
 $('#btn-data-all').addEventListener('click', ()=>{
