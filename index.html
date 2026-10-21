@@ -333,7 +333,7 @@ tbody tr:hover td{background:#EAF2EB;}
 .btn:hover,.global-print-btn:hover,.main-nav-btn:hover,.navbtn:hover{filter:brightness(1.07);box-shadow:inset 0 1px 0 rgba(255,255,255,.75),0 3px 0 rgba(18,42,27,.18),0 5px 10px rgba(0,0,0,.16);}
 .btn:active,.global-print-btn:active,.main-nav-btn:active,.navbtn:active{transform:translateY(1px);box-shadow:inset 0 1px 3px rgba(0,0,0,.18),0 1px 0 rgba(18,42,27,.15);}
 
-/* v1.63: 이전 버전 기반 조회 조건 팝업 표시/닫기 동작 수정 */
+/* v1.64: DATA 행 더블클릭 수정/삭제 팝업 및 조회 결과 포함 상시 드래그 정렬 */
 #tab-input.entry-modal{display:block!important;position:fixed;z-index:10000;inset:3vh 3vw;overflow:auto;background:#fff;padding:20px;border:1px solid #9aa99f;border-radius:12px;box-shadow:0 12px 48px rgba(0,0,0,.35)}
 #data-filter-card.search-modal{display:block!important;position:fixed;z-index:10001;left:50%;top:50%;transform:translate(-50%,-50%);width:min(92vw,650px);max-height:88vh;overflow:auto;background:#fff;padding:20px;border:1px solid #9aa99f;border-radius:12px;box-shadow:0 12px 48px rgba(0,0,0,.35)}
 #data-filter-card[hidden]{display:none!important}
@@ -429,8 +429,6 @@ tbody tr:hover td{background:#EAF2EB;}
         <button type="button" class="btn btn-primary" id="btn-search">조회</button>
         <button class="btn btn-outline btn-sm" id="btn-data-all">전체</button>
         <button class="btn btn-outline btn-sm" id="btn-import">파일 업로드</button><input type="file" id="excel-file" accept=".xlsx,.xls,.csv" style="display:none;">
-        <button class="btn btn-outline btn-sm" id="btn-data-edit-selected">선택 수정</button>
-        <button class="btn btn-danger btn-sm" id="btn-data-delete-selected">선택 삭제</button>
         <button class="btn btn-danger btn-sm" id="btn-reset-all">전체 초기화</button>
       </div>
       <div class="card" id="data-filter-card" hidden>
@@ -1566,47 +1564,50 @@ function renderDataTable(){
   const el = $('#data-table');
   if(!entries.length){ el.innerHTML='<div class="empty">아직 입력된 내역이 없습니다. 위 입력 버튼으로 내역을 추가하거나 파일을 업로드하세요.</div>'; return; }
   const rows = [...entries].sort((a,b)=> a.date===b.date ? ((a.ts||0)-(b.ts||0)) : a.date.localeCompare(b.date));
-  const handleCell = () => editMode ? `<span class="drag-handle" title="드래그해서 같은 날짜 안의 순서를 바꾸세요">⠿⠿</span>` : '';
+  const handleCell = () => `<span class="drag-handle" title="드래그해서 같은 날짜 안의 순서를 바꾸세요">⠿⠿</span>`;
   el.innerHTML = `<div class="table-wrap"><table><thead><tr>
-    <th class="no-print" title="항목 선택">선택</th><th class="no-print"></th><th>번호</th><th>일자</th><th>구분</th><th>계정과목</th><th>적요</th><th>출납방식</th><th class="num">금액</th><th class="num">잔액</th><th>비고</th>
+    <th class="no-print"></th><th>번호</th><th>일자</th><th>구분</th><th>계정과목</th><th>적요</th><th>출납방식</th><th class="num">금액</th><th class="num">잔액</th><th>비고</th>
   </tr></thead><tbody id="data-tbody">` + rows.map((e,i)=>`
-    <tr draggable="${editMode?'true':'false'}" data-id="${e.id}" data-date="${e.date}">
-      <td class="no-print"><input type="checkbox" class="data-row-select" data-select-id="${e.id}" aria-label="${e.date} ${e.item} 선택" ${selectedDataIds.has(e.id)?'checked':''} ${editMode?'':'disabled'}></td><td class="no-print">${handleCell(e)}</td><td>${i+1}</td>
+    <tr draggable="true" data-id="${e.id}" data-date="${e.date}">
+      <td class="no-print">${handleCell(e)}</td><td>${i+1}</td>
       <td>${e.date}</td>
       <td><span class="tag ${e.type==='수입'?'tag-income':'tag-expense'}">${e.type}</span></td>
       <td>${e.category}</td><td>${e.item}</td><td>${e.method||''}</td>
       <td class="num">${fmt(e.amount)}</td><td class="num">${fmt(e.balance)}</td><td>${e.note||''}</td>
     </tr>`).join('') + `</tbody></table></div>`;
-  wireDragHandlers();
+  wireDragHandlers('#data-tbody');
+  wireDataRowActions('#data-tbody');
 }
 function selectedDataEntries(){ return [...selectedDataIds].map(id=>entries.find(e=>e.id===id)).filter(Boolean); }
 document.addEventListener('change', ev=>{
   const box=ev.target.closest('.data-row-select'); if(!box)return;
   if(box.checked) selectedDataIds.add(box.dataset.selectId); else selectedDataIds.delete(box.dataset.selectId);
 });
-$('#btn-data-edit-selected').addEventListener('click',()=>{
-  if(!requireEdit())return;
-  const chosen=selectedDataEntries();
-  if(chosen.length!==1){showToast('수정할 항목을 하나만 체크하세요.',true);return;}
-  startEdit(chosen[0].id);
-});
-$('#btn-data-delete-selected').addEventListener('click',async()=>{
-  if(!requireEdit())return;
-  const chosen=selectedDataEntries();
-  if(!chosen.length){showToast('삭제할 항목을 체크하세요.',true);return;}
-  const ok=await customConfirm(`선택한 ${chosen.length}개 항목을 삭제하시겠습니까?`,'선택 삭제 확인');
-  if(!ok)return;
-  try{
-    for(const e of chosen) await deleteDoc(doc(fdb,'entries',e.id));
-    chosen.forEach(e=>selectedDataIds.delete(e.id));
-    showToast(`${chosen.length}개 항목을 삭제했습니다.`);
-  }catch(e){showToast('삭제 중 오류: '+(e.message||e.code),true);}
-});
-function wireDragHandlers(){
-  const tbody = $('#data-tbody'); if(!tbody) return;
+function wireDataRowActions(selector){
+  const tbody=document.querySelector(selector); if(!tbody)return;
+  tbody.querySelectorAll('tr[data-id]').forEach(tr=>tr.addEventListener('dblclick',()=>openDataActionPopup(tr.dataset.id)));
+}
+function openDataActionPopup(id){
+  const e=entries.find(x=>x.id===id); if(!e)return;
+  let overlay=document.getElementById('data-row-action-overlay');
+  if(!overlay){
+    overlay=document.createElement('div'); overlay.id='data-row-action-overlay';
+    overlay.style.cssText='position:fixed;inset:0;z-index:12000;background:rgba(0,0,0,.42);display:flex;align-items:center;justify-content:center;padding:18px';
+    overlay.innerHTML='<div role="dialog" aria-modal="true" style="width:min(92vw,420px);background:var(--card,#fff);color:var(--ink,#222);border-radius:12px;padding:22px;box-shadow:0 12px 42px rgba(0,0,0,.3)"><h3 style="margin:0 0 8px">거래 내역</h3><p id="data-row-action-summary" style="margin:0 0 18px;line-height:1.6;overflow-wrap:anywhere"></p><div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap"><button type="button" class="btn btn-outline" id="data-row-action-close">닫기</button><button type="button" class="btn btn-danger" id="data-row-action-delete">삭제</button><button type="button" class="btn btn-primary" id="data-row-action-edit">수정</button></div></div>';
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click',ev=>{if(ev.target===overlay)overlay.style.display='none'});
+    overlay.querySelector('#data-row-action-close').addEventListener('click',()=>overlay.style.display='none');
+    overlay.querySelector('#data-row-action-edit').addEventListener('click',()=>{const target=overlay.dataset.entryId;overlay.style.display='none';startEdit(target)});
+    overlay.querySelector('#data-row-action-delete').addEventListener('click',async()=>{const target=overlay.dataset.entryId;overlay.style.display='none';await deleteEntry(target)});
+  }
+  overlay.dataset.entryId=id;
+  overlay.querySelector('#data-row-action-summary').textContent=`${e.date} · ${e.type} · ${e.category} · ${e.item} · ${fmt(e.amount)}원`;
+  overlay.style.display='flex';
+}
+function wireDragHandlers(selector='#data-tbody'){
+  const tbody = document.querySelector(selector); if(!tbody) return;
   tbody.querySelectorAll('tr').forEach(tr=>{
     tr.addEventListener('dragstart', (ev)=>{
-      if(!editMode){ ev.preventDefault(); return; }
       dragSourceId = tr.dataset.id;
       ev.dataTransfer.effectAllowed = 'move';
       try{ ev.dataTransfer.setData('text/plain', tr.dataset.id); }catch(e){}
@@ -1861,11 +1862,13 @@ function renderSearch(){
   const el=$('#search-table');
   if(!sorted.length){ el.innerHTML='<div class="empty">조건에 맞는 내역이 없습니다.</div>'; return; }
   el.innerHTML = `<div class="table-wrap"><table><thead><tr>
-    <th>번호</th><th>일자</th><th>구분</th><th>계정과목</th><th>적요</th><th>출납방식</th><th class="num">금액</th><th class="num">잔액</th><th>비고</th>
-  </tr></thead><tbody>` + sorted.map((e,i)=>`
-    <tr><td>${i+1}</td><td>${e.date}</td><td><span class="tag ${e.type==='수입'?'tag-income':'tag-expense'}">${e.type}</span></td>
+    <th class="no-print"></th><th>번호</th><th>일자</th><th>구분</th><th>계정과목</th><th>적요</th><th>출납방식</th><th class="num">금액</th><th class="num">잔액</th><th>비고</th>
+  </tr></thead><tbody id="search-data-tbody">` + sorted.map((e,i)=>`
+    <tr draggable="true" data-id="${e.id}" data-date="${e.date}"><td class="no-print"><span class="drag-handle" title="드래그해서 같은 날짜 안의 순서를 바꾸세요">⠿⠿</span></td><td>${i+1}</td><td>${e.date}</td><td><span class="tag ${e.type==='수입'?'tag-income':'tag-expense'}">${e.type}</span></td>
     <td>${e.category}</td><td>${e.item}</td><td>${e.method||''}</td>
     <td class="num">${fmt(e.amount)}</td><td class="num">${fmt(e.balance)}</td><td>${e.note||''}</td></tr>`).join('') + `</tbody></table></div>`;
+  wireDragHandlers('#search-data-tbody');
+  wireDataRowActions('#search-data-tbody');
 }
 $('#btn-search').addEventListener('click', ()=>{const modal=$('#data-filter-card'); modal.hidden=false; modal.classList.add('search-modal'); $('#s-keyword').focus();});
 $('#btn-run-search').addEventListener('click', ()=>{renderSearch();const modal=$('#data-filter-card');modal.classList.remove('search-modal');modal.hidden=true;});
