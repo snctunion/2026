@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>조합사무국 v1.42</title>
+<title>조합사무국 v1.43</title>
 <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png">
 <link rel="apple-touch-icon" sizes="180x180" href="./icon-180.png">
@@ -123,6 +123,9 @@ input,select,textarea{
   font-size:14.5px; background:var(--white); color:var(--ink); font-family:inherit;
   color-scheme:light;
 }
+/* 달력 날짜칸과 일반 선택칸의 높이를 통일 */
+input[type="date"],select{height:42px;min-height:42px;box-sizing:border-box;}
+input[type="date"]{padding-top:8px;padding-bottom:8px;}
 /* 신규 메뉴 입력 컨트롤: 동일한 가로폭과 높이로 통일 */
 #tab-members input:not([type="checkbox"]),#tab-members select,#tab-status input:not([type="checkbox"]),#tab-status select{width:100%;min-width:0;height:42px;min-height:42px;box-sizing:border-box;}
 #tab-members input[type="date"],#tab-status input[type="date"]{height:42px;min-height:42px;padding-top:9px;padding-bottom:9px;}
@@ -322,7 +325,7 @@ tbody tr:hover td{background:#EAF2EB;}
 /* 메뉴 제목 아래 작은 설명 문구 제거 */
 .tab-panel .panel-head p{display:none !important;}
 
-/* v1.42: raised glossy button finish */
+/* v1.43: raised glossy button finish */
 .btn,.global-print-btn,.main-nav-btn,.navbtn{box-shadow:inset 0 1px 0 rgba(255,255,255,.62),0 2px 0 rgba(18,42,27,.18),0 3px 7px rgba(0,0,0,.12);transition:filter .15s ease,transform .15s ease,box-shadow .15s ease;background-image:linear-gradient(to bottom,rgba(255,255,255,.22),rgba(255,255,255,0) 55%);}
 .btn:hover,.global-print-btn:hover,.main-nav-btn:hover,.navbtn:hover{filter:brightness(1.07);box-shadow:inset 0 1px 0 rgba(255,255,255,.75),0 3px 0 rgba(18,42,27,.18),0 5px 10px rgba(0,0,0,.16);}
 .btn:active,.global-print-btn:active,.main-nav-btn:active,.navbtn:active{transform:translateY(1px);box-shadow:inset 0 1px 3px rgba(0,0,0,.18),0 1px 0 rgba(18,42,27,.15);}
@@ -344,7 +347,7 @@ tbody tr:hover td{background:#EAF2EB;}
 <div id="login-overlay">
   <div id="login-box">
     <div class="icon">📒</div>
-    <h3>조합사무국 <small class="app-version">v1.42</small></h3>
+    <h3>조합사무국 <small class="app-version">v1.43</small></h3>
     <p>등록된 계정으로 로그인하세요.<br>계정은 관리자가 Firebase 콘솔에서 직접 등록합니다.</p>
     <input type="email" id="login-email" placeholder="이메일" autocomplete="username">
     <input type="password" id="login-password" placeholder="비밀번호" autocomplete="current-password" style="margin-top:8px;">
@@ -354,7 +357,7 @@ tbody tr:hover td{background:#EAF2EB;}
 </div>
 <div id="app" style="display:none;">
   <nav id="sidebar">
-    <div class="brand"><b>조합사무국 <small class="app-version">v1.42</small></b><span>SNCT UNION 사무업무</span></div>
+    <div class="brand"><b>조합사무국 <small class="app-version">v1.43</small></b><span>SNCT UNION 사무업무</span></div>
     <div class="lockbox">
       <div class="st" id="lock-status">🔓 <span id="lock-email"></span></div>
       <button type="button" id="btn-app-refresh" title="앱 화면과 데이터를 다시 불러옵니다">앱 새로고침</button>
@@ -367,7 +370,6 @@ tbody tr:hover td{background:#EAF2EB;}
     <div id="sub-nav" aria-label="하위 메뉴">
       <button class="navbtn" data-tab="input" data-group="accounting">입력</button>
       <button class="navbtn" data-tab="data" data-group="accounting">데이터</button>
-      <button class="navbtn" data-tab="search" data-group="accounting">검색</button>
       <button class="navbtn" data-tab="monthly" data-group="accounting">월간내역</button>
       <button class="navbtn" data-tab="budget" data-group="accounting">예산안</button>
       <button class="navbtn" data-tab="audit" data-group="accounting">회계감사</button>
@@ -412,28 +414,18 @@ tbody tr:hover td{background:#EAF2EB;}
 
     <section id="tab-data" class="tab-panel">
       <div class="panel-head"><h2>데이터</h2><p>전체 거래 내역과 잔액입니다.</p></div>
-      <div class="btn-row no-print" style="margin-bottom:14px;">
-        <button class="btn btn-outline btn-sm" onclick="printData()">인쇄</button>
-        <button class="btn btn-outline btn-sm" id="btn-import">파일 업로드</button>
-        <input type="file" id="excel-file" accept=".xlsx,.xls,.csv" style="display:none;">
-        <button class="btn btn-danger btn-sm" id="btn-reset-all">전체 초기화</button>
-      </div>
-      <div id="bank-preview"></div>
-      <div id="data-table"></div>
-    </section>
-
-    <section id="tab-search" class="tab-panel">
-      <div class="panel-head"><h2>검색</h2><p>기간과 검색어로 내역을 찾습니다.</p></div>
-      <div class="card">
+      <div class="card" id="data-filter-card">
         <div class="grid2">
           <div class="field"><label>시작일</label><input type="date" id="s-start"></div>
           <div class="field"><label>종료일</label><input type="date" id="s-end"></div>
         </div>
-        <div class="field"><label>통합검색어</label><input type="text" id="s-keyword" placeholder="계정과목·적요·출납방식·비고 대상 (공란=전체)"></div>
-        <div class="btn-row no-print"><button class="btn btn-primary btn-sm" id="btn-search">검색</button><button class="btn btn-outline btn-sm" onclick="printSearchTab()">인쇄</button></div>
+        <div class="field"><label>통합검색어</label><input type="text" id="s-keyword" placeholder="계정과목·적요·출납방식·비고"></div>
+        <div class="btn-row no-print"><button class="btn btn-primary btn-sm" id="btn-search">조회</button><button class="btn btn-outline btn-sm" id="btn-data-all">전체</button><button class="btn btn-outline btn-sm" onclick="printData()">인쇄</button><button class="btn btn-outline btn-sm" id="btn-import">파일 업로드</button><input type="file" id="excel-file" accept=".xlsx,.xls,.csv" style="display:none;"><button class="btn btn-danger btn-sm" id="btn-reset-all">전체 초기화</button></div>
       </div>
-      <div id="search-stats" class="stat-row"></div>
-      <div id="search-table"></div>
+      <div id="bank-preview"></div>
+      <div id="search-stats" class="stat-row" hidden></div>
+      <div id="search-table" hidden></div>
+      <div id="data-table"></div>
     </section>
 
     <section id="tab-monthly" class="tab-panel">
@@ -501,8 +493,8 @@ tbody tr:hover td{background:#EAF2EB;}
 </div>
 
 <script type="module">
-const APP_VERSION = '1.42'; // 이후 버전 변경 시 이 값만 올리면 화면 표시를 함께 갱신
-document.title = '조합사무국 v1.42';
+const APP_VERSION = '1.43'; // 이후 버전 변경 시 이 값만 올리면 화면 표시를 함께 갱신
+document.title = '조합사무국 v1.43';
 document.querySelectorAll('.app-version').forEach(el=>el.textContent=`v${APP_VERSION}`);
 const SEED_ENTRIES = [{"date": "2026-06-01", "type": "수입", "category": "기타수입", "item": "이월금", "method": "계좌잔액", "amount": 9491981, "note": "전년도이월금"}, {"date": "2026-06-01", "type": "수입", "category": "기타수입", "item": "찬조수입", "method": "계좌입금", "amount": 50000, "note": "후원수입(연합인천지역본부)"}, {"date": "2026-06-01", "type": "수입", "category": "기타수입", "item": "찬조수입", "method": "계좌입금", "amount": 750000, "note": "후원수입(연합15개회원사)"}, {"date": "2026-06-01", "type": "수입", "category": "기타수입", "item": "찬조수입", "method": "계좌입금", "amount": 50000, "note": "후원수입(한국노총인천지역본부)"}, {"date": "2026-06-01", "type": "지출", "category": "회의비", "item": "대의원대회", "method": "체크카드", "amount": 350000, "note": "상품권구입"}, {"date": "2026-06-01", "type": "지출", "category": "유지비", "item": "비품비", "method": "체크카드", "amount": 29160, "note": "음료구입"}, {"date": "2026-06-01", "type": "수입", "category": "기타수입", "item": "찬조수입", "method": "계좌입금", "amount": 50000, "note": "후원수입(영창운수)"}, {"date": "2026-06-01", "type": "지출", "category": "회의비", "item": "대의원대회", "method": "체크카드", "amount": 405000, "note": "회의후식사비(10명)1차"}, {"date": "2026-06-01", "type": "지출", "category": "회의비", "item": "대의원대회", "method": "체크카드", "amount": 62000, "note": "회의후식사비 2차"}, {"date": "2026-06-01", "type": "지출", "category": "회의비", "item": "대의원대회", "method": "체크카드", "amount": 15300, "note": "대리비"}, {"date": "2026-06-01", "type": "지출", "category": "회의비", "item": "대의원대회", "method": "체크카드", "amount": 15300, "note": "대리비"}, {"date": "2026-06-01", "type": "지출", "category": "회의비", "item": "대의원대회", "method": "체크카드", "amount": 25500, "note": "대리비"}, {"date": "2026-06-01", "type": "지출", "category": "회의비", "item": "대의원대회", "method": "체크카드", "amount": 25500, "note": "대리비"}, {"date": "2026-06-02", "type": "지출", "category": "유지비", "item": "차량유지비", "method": "체크카드", "amount": 100000, "note": "주유비"}, {"date": "2026-06-05", "type": "수입", "category": "고정수입", "item": "조합비", "method": "계좌입금", "amount": 2100470, "note": "5월"}, {"date": "2026-06-05", "type": "지출", "category": "의무금", "item": "노총인천본부", "method": "계좌이체", "amount": 45600, "note": "한노총"}, {"date": "2026-06-05", "type": "지출", "category": "의무금", "item": "연합연맹", "method": "계좌이체", "amount": 116000, "note": "전국연합/인천본부"}, {"date": "2026-06-05", "type": "지출", "category": "의무금", "item": "하역사", "method": "계좌이체", "amount": 70000, "note": "하역검수협의회"}, {"date": "2026-06-05", "type": "지출", "category": "의무금", "item": "중동구", "method": "계좌이체", "amount": 40000, "note": "중동구협의회"}, {"date": "2026-06-05", "type": "지출", "category": "유지비", "item": "업무추진비", "method": "계좌이체", "amount": 500000, "note": "위원장"}, {"date": "2026-06-05", "type": "지출", "category": "유지비", "item": "사무보조비", "method": "계좌이체", "amount": 100000, "note": "사무국장"}, {"date": "2026-06-08", "type": "지출", "category": "행사비", "item": "워크샵비", "method": "계좌이체", "amount": 100000, "note": "노총간부교육참가비"}, {"date": "2026-06-09", "type": "지출", "category": "행사비", "item": "워크샵비", "method": "계좌이체", "amount": 150000, "note": "노총간부교육3일충장비"}, {"date": "2026-06-10", "type": "지출", "category": "회의비", "item": "운영회의", "method": "법인카드", "amount": 99000, "note": "운영회의(4/27)후식사2차"}, {"date": "2026-06-10", "type": "지출", "category": "회의비", "item": "운영회의", "method": "법인카드", "amount": 324000, "note": "운영회의(4/27)후식사"}, {"date": "2026-06-10", "type": "지출", "category": "회의비", "item": "운영회의", "method": "법인카드", "amount": 25500, "note": "운영회의(4/27)후대리1건"}, {"date": "2026-06-10", "type": "지출", "category": "유지비", "item": "차량유지비", "method": "법인카드", "amount": 99500, "note": "주유비(5/15)"}, {"date": "2026-06-13", "type": "수입", "category": "기타수입", "item": "결산이자", "method": "계좌입금", "amount": 4878, "note": "잔고이자"}, {"date": "2026-06-15", "type": "지출", "category": "행사비", "item": "찬조비", "method": "계좌이체", "amount": 100000, "note": "회원사후원(스태츠칩팩코리아)"}, {"date": "2026-06-16", "type": "지출", "category": "유지비", "item": "비품비", "method": "계좌이체", "amount": 100530, "note": "다과구입(사무장비용처리)"}, {"date": "2026-06-16", "type": "지출", "category": "회의비", "item": "각종회의비", "method": "체크카드", "amount": 265000, "note": "2차협상후식사1차"}, {"date": "2026-06-16", "type": "지출", "category": "활동비", "item": "조직활동비", "method": "체크카드", "amount": 15300, "note": "2차협상후대리비"}, {"date": "2026-06-16", "type": "지출", "category": "회의비", "item": "각종회의비", "method": "체크카드", "amount": 113500, "note": "2차협상후식사2차"}, {"date": "2026-06-16", "type": "지출", "category": "회의비", "item": "각종회의비", "method": "체크카드", "amount": 48800, "note": "2차협상후식사3차"}, {"date": "2026-06-16", "type": "지출", "category": "활동비", "item": "조직활동비", "method": "체크카드", "amount": 6400, "note": "사무국장택시오사용17일입금"}, {"date": "2026-06-16", "type": "지출", "category": "활동비", "item": "조직활동비", "method": "체크카드", "amount": 25500, "note": "2차협상후대리비"}, {"date": "2026-06-17", "type": "수입", "category": "기타수입", "item": "찬조수입", "method": "체크카드", "amount": 6400, "note": "16일사무국장오사용분처리"}, {"date": "2026-06-20", "type": "지출", "category": "활동비", "item": "조직활동비", "method": "계좌이체", "amount": 75000, "note": "이상필대표모친상 근조화환"}, {"date": "2026-06-22", "type": "지출", "category": "활동비", "item": "조직활동비", "method": "체크카드", "amount": 30000, "note": "3차협상 후 식사비"}, {"date": "2026-06-22", "type": "지출", "category": "활동비", "item": "조직활동비", "method": "체크카드", "amount": 25500, "note": "3차협상 후 대리비"}, {"date": "2026-06-29", "type": "지출", "category": "활동비", "item": "조직활동비", "method": "체크카드", "amount": 170000, "note": "4차협상 후 식사1차"}, {"date": "2026-06-29", "type": "지출", "category": "활동비", "item": "조직활동비", "method": "체크카드", "amount": 103000, "note": "4차협상 후 식사2차"}, {"date": "2026-06-29", "type": "지출", "category": "활동비", "item": "조직활동비", "method": "체크카드", "amount": 15300, "note": "4차협상 후 대리비"}, {"date": "2026-06-29", "type": "지출", "category": "활동비", "item": "조직활동비", "method": "체크카드", "amount": 25500, "note": "4차협상 후 대리비"}, {"date": "2026-07-03", "type": "수입", "category": "고정수입", "item": "조합비", "method": "계좌입금", "amount": 2100470, "note": "6월"}, {"date": "2026-07-06", "type": "수입", "category": "기타수입", "item": "찬조수입", "method": "계좌입금", "amount": 74000, "note": "오사용분 7/6입금(위원장)"}, {"date": "2026-07-06", "type": "지출", "category": "의무금", "item": "연합연맹", "method": "계좌이체", "amount": 116000, "note": "전국연합/인천본부"}, {"date": "2026-07-06", "type": "지출", "category": "의무금", "item": "노총인천본부", "method": "계좌이체", "amount": 45600, "note": "한노총"}, {"date": "2026-07-06", "type": "지출", "category": "의무금", "item": "하역사", "method": "계좌이체", "amount": 70000, "note": "하역검수협의회"}, {"date": "2026-07-06", "type": "지출", "category": "의무금", "item": "중동구", "method": "계좌이체", "amount": 40000, "note": "중동구협의회"}, {"date": "2026-07-06", "type": "지출", "category": "유지비", "item": "업무추진비", "method": "계좌이체", "amount": 500000, "note": "위원장"}, {"date": "2026-07-06", "type": "지출", "category": "유지비", "item": "사무보조비", "method": "계좌이체", "amount": 100000, "note": "사무국장"}, {"date": "2026-07-06", "type": "지출", "category": "활동비", "item": "조직활동비", "method": "체크카드", "amount": 121000, "note": "5차협상 후 식사1"}, {"date": "2026-07-06", "type": "지출", "category": "활동비", "item": "조직활동비", "method": "체크카드", "amount": 82000, "note": "5차협상 후 식사2"}, {"date": "2026-07-06", "type": "지출", "category": "활동비", "item": "조직활동비", "method": "체크카드", "amount": 40000, "note": "5차협상 후 식사3"}, {"date": "2026-07-06", "type": "지출", "category": "활동비", "item": "조직활동비", "method": "체크카드", "amount": 15300, "note": "5차협상 후 대리1"}, {"date": "2026-07-06", "type": "지출", "category": "활동비", "item": "조직활동비", "method": "체크카드", "amount": 25500, "note": "5차협상 후 대리2"}, {"date": "2026-07-10", "type": "지출", "category": "유지비", "item": "차량유지비", "method": "법인카드", "amount": 99500, "note": "주유비"}, {"date": "2026-08-03", "type": "지출", "category": "유지비", "item": "비품비", "method": "계좌이체", "amount": 4400, "note": "공동인증서발급수수료"}, {"date": "2026-08-03", "type": "지출", "category": "유지비", "item": "비품비", "method": "계좌이체", "amount": 105230, "note": "다과구입(사무국장비용처리)"}, {"date": "2026-08-04", "type": "지출", "category": "의무금", "item": "연합연맹", "method": "계좌이체", "amount": 116000, "note": "전국연합/인천본부"}, {"date": "2026-08-04", "type": "지출", "category": "의무금", "item": "노총인천본부", "method": "계좌이체", "amount": 45600, "note": "한노총"}, {"date": "2026-08-04", "type": "지출", "category": "의무금", "item": "하역사", "method": "계좌이체", "amount": 70000, "note": "하역검수협의회"}, {"date": "2026-08-04", "type": "지출", "category": "의무금", "item": "중동구", "method": "계좌이체", "amount": 40000, "note": "중동구협의회"}, {"date": "2026-08-04", "type": "지출", "category": "유지비", "item": "업무추진비", "method": "계좌이체", "amount": 500000, "note": "위원장"}, {"date": "2026-08-04", "type": "지출", "category": "유지비", "item": "사무보조비", "method": "계좌이체", "amount": 100000, "note": "사무국장"}, {"date": "2026-08-05", "type": "수입", "category": "고정수입", "item": "조합비", "method": "계좌입금", "amount": 2100470, "note": "7월"}, {"date": "2026-08-05", "type": "지출", "category": "회의비", "item": "집행회의", "method": "체크카드", "amount": 45900, "note": "집행부임협회의후대리비"}, {"date": "2026-08-07", "type": "지출", "category": "회의비", "item": "집행회의", "method": "체크카드", "amount": 30600, "note": "집행부임협회의후대리비"}, {"date": "2026-08-10", "type": "지출", "category": "유지비", "item": "차량유지비", "method": "법인카드", "amount": 99500, "note": "주유"}, {"date": "2026-08-10", "type": "지출", "category": "행사비", "item": "찬조비", "method": "법인카드", "amount": 74000, "note": "위원장오사용분(7/6입금)"}, {"date": "2026-08-10", "type": "지출", "category": "유지비", "item": "비품비", "method": "법인카드", "amount": 400, "note": "sms서비스이용료"}, {"date": "2026-08-10", "type": "지출", "category": "회의비", "item": "집행회의", "method": "체크카드", "amount": 25500, "note": "집행부임협회의후대리"}, {"date": "2026-08-13", "type": "지출", "category": "회의비", "item": "집행회의", "method": "체크카드", "amount": 143000, "note": "6차협상후식사"}, {"date": "2026-08-13", "type": "지출", "category": "회의비", "item": "집행회의", "method": "체크카드", "amount": 15300, "note": "대리비1"}, {"date": "2026-08-13", "type": "지출", "category": "회의비", "item": "집행회의", "method": "체크카드", "amount": 25500, "note": "대리비2"}, {"date": "2026-08-18", "type": "지출", "category": "행사비", "item": "찬조비", "method": "계좌이체", "amount": 50000, "note": "후원금(우련통운총회)"}, {"date": "2026-08-18", "type": "지출", "category": "행사비", "item": "찬조비", "method": "계좌이체", "amount": 20000, "note": "후원금(우련통운전별금)"}, {"date": "2026-08-18", "type": "지출", "category": "행사비", "item": "찬조비", "method": "계좌이체", "amount": 20000, "note": "후원금(대한제분전별금)"}, {"date": "2026-08-18", "type": "지출", "category": "회의비", "item": "각종회의비", "method": "체크카드", "amount": 25500, "note": "임금체결대리비1"}, {"date": "2026-08-18", "type": "지출", "category": "회의비", "item": "각종회의비", "method": "체크카드", "amount": 20400, "note": "임금체결대리비2"}, {"date": "2026-08-19", "type": "지출", "category": "워크샵비", "item": "워크샵비", "method": "체크카드", "amount": 50000, "note": "하계연친회참가비"}, {"date": "2026-08-19", "type": "지출", "category": "활동비", "item": "조직활동비", "method": "체크카드", "amount": 25500, "note": "중동구협의회대리비"}, {"date": "2026-08-24", "type": "지출", "category": "유지비", "item": "비품비", "method": "계좌이체", "amount": 800, "note": "SMS서비스이용료"}, {"date": "2026-08-26", "type": "지출", "category": "워크샵비", "item": "워크샵비", "method": "계좌이체", "amount": 150000, "note": "연친회3일출장비(위원장)"}, {"date": "2026-09-03", "type": "지출", "category": "활동비", "item": "부처활동비", "method": "체크카드", "amount": 239000, "note": "징계위후(김성용선임)식사"}, {"date": "2026-09-03", "type": "지출", "category": "활동비", "item": "부처활동비", "method": "체크카드", "amount": 54000, "note": "징계위후(김성용선임)식사2"}, {"date": "2026-09-04", "type": "수입", "category": "고정수입", "item": "조합비", "method": "계좌입금", "amount": 232780, "note": "조합비소급분"}, {"date": "2026-09-04", "type": "수입", "category": "고정수입", "item": "조합비", "method": "계좌입금", "amount": 2153860, "note": "조합비8월분"}, {"date": "2026-09-08", "type": "지출", "category": "의무금", "item": "연합연맹", "method": "계좌이체", "amount": 116000, "note": "전국연합/인천본부(9월)"}, {"date": "2026-09-08", "type": "지출", "category": "의무금", "item": "노총인천본부", "method": "계좌이체", "amount": 45600, "note": "한노총(9월)"}, {"date": "2026-09-08", "type": "지출", "category": "의무금", "item": "하역사", "method": "계좌이체", "amount": 70000, "note": "하역사협의회(9월)"}, {"date": "2026-09-08", "type": "지출", "category": "의무금", "item": "중동구", "method": "계좌이체", "amount": 40000, "note": "중동구협의회(9월)"}, {"date": "2026-09-08", "type": "지출", "category": "유지비", "item": "업무추진비", "method": "계좌이체", "amount": 500000, "note": "위원장(9월)"}, {"date": "2026-09-08", "type": "지출", "category": "유지비", "item": "사무보조비", "method": "계좌이체", "amount": 100000, "note": "사무국장(9월)"}, {"date": "2026-09-10", "type": "지출", "category": "유지비", "item": "차량유지비", "method": "법인카드", "amount": 99500, "note": "주유비(8/4)"}, {"date": "2026-09-10", "type": "지출", "category": "회의비", "item": "집행회의", "method": "법인카드", "amount": 90000, "note": "임금회의(8/7)"}, {"date": "2026-09-10", "type": "지출", "category": "회의비", "item": "집행회의", "method": "법인카드", "amount": 94000, "note": "임금회의(8/10)"}, {"date": "2026-09-10", "type": "지출", "category": "유지비", "item": "차량유지비", "method": "법인카드", "amount": 99500, "note": "주유비(8/20)"}, {"date": "2026-09-10", "type": "지출", "category": "유지비", "item": "비품비", "method": "법인카드", "amount": 400, "note": "SMS서비스이용료(8/18)"}, {"date": "2026-09-16", "type": "지출", "category": "행사비", "item": "찬조비", "method": "계좌이체", "amount": 50000, "note": "후원금(선광대의원대회)"}, {"date": "2026-09-16", "type": "지출", "category": "유지비", "item": "비품비", "method": "계좌이체", "amount": 81320, "note": "다과구입(사무국장비용처리)"}];
 /* ====================================================================
@@ -807,9 +799,9 @@ function groupedTableHtml(o){
 function singleTable(rowsArr, headerHtml){
   return `<table><thead>${headerHtml}</thead><tbody>${rowsArr.join('')}</tbody></table>`;
 }
-function printData(){ printHTML('조합사무국 - 전체 데이터', stripActionCol($('#data-table').innerHTML), false); }
+function printData(){ const body=dataFilteredView ? ($('#search-stats').outerHTML.replace(' hidden','').replace('id=\"search-stats\"','') + $('#search-table').innerHTML) : stripActionCol($('#data-table').innerHTML); printHTML(dataFilteredView?'조회 결과':'전체 데이터', body, false); }
 function printSearchTab(){
-  printHTML('조합사무국 - 검색 결과', $('#search-stats').outerHTML.replace('id="search-stats"','') + $('#search-table').innerHTML, false);
+  printHTML('조회 결과', $('#search-stats').outerHTML.replace('id="search-stats"','') + $('#search-table').innerHTML, false);
 }
 function printMonthlyTab(){
   const year=Number($('#m-year').value), month=Number($('#m-month').value);
@@ -990,10 +982,10 @@ function exportActiveTabExcel(tabId){
   XLSX.writeFile(wb,`${(panel.querySelector('.panel-head h2')?.innerText||tabId).replace(/[\\/:*?"<>|]/g,'_')}.xlsx`);
 }
 function printActiveTabPdf(tabId){
-  const map={'tab-data':printData,'tab-search':printSearchTab,'tab-monthly':printMonthlyTab,'tab-budget':printBudgetTab,'tab-audit':printAuditTab,'tab-codes':printCodesTab};
+  const map={'tab-data':printData,'tab-monthly':printMonthlyTab,'tab-budget':printBudgetTab,'tab-audit':printAuditTab,'tab-codes':printCodesTab};
   if(map[tabId]){map[tabId]();return;}
   const panel=document.getElementById(tabId); if(!panel)return;
-  printHTML(panel.querySelector('.panel-head h2')?.innerText||'조합사무국',panel.innerHTML,false);
+  printHTML(panel.querySelector('.panel-head h2')?.innerText||'인쇄',panel.innerHTML,false);
 }
 /* 하단의 개별 엑셀/PDF 생성 버튼은 제거. 상단 공통 버튼을 사용합니다. */
 
@@ -1152,7 +1144,7 @@ function installOfficeFeatures(){const by=document.getElementById('benefit-year'
  const note=`<section class="note-section"><h2>참고사항</h2><div class="note-box">${esc(policyNote).replace(/\n/g,'<br>')}</div></section>`;
  const longNotes=`<section class="sheet-footnotes"><div>*상기 경조휴가는 연속사용하여야하고, 경조휴가 기간 中 휴일은 경조휴가 기간에 포함한다.</div><div>*화환은 행사 초대장 제출 시 지급한다.</div></section>`;
  const w=window.open('','_blank');if(!w){showToast('인쇄 창이 차단되었습니다. 팝업을 허용하세요.',true);return}
- w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>SNCT 경조사비 지급기준 v1.42</title><style>
+ w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>SNCT 경조사비 지급기준 v1.43</title><style>
  @page{size:A4 landscape;margin:5mm}*{box-sizing:border-box}html,body{margin:0;padding:0;color:#111;font-family:Arial,'Malgun Gothic',sans-serif}body{width:100%;font-size:7pt}h1{font-size:15pt;text-align:center;margin:0 0 2.5mm;font-weight:700}.layout{display:grid;grid-template-columns:1fr 1fr;gap:4mm;width:100%;align-items:start}.left-col,.right-col{min-width:0}.top-table{width:100%;min-width:0}.top-table h2,.long-table h2,.note-section h2{font-size:8pt;text-align:center;margin:0 0 1mm}.top-table table,.long-table table{border-collapse:collapse;width:100%;table-layout:fixed;font-size:6.5pt;line-height:1.05}.top-table th,.top-table td,.long-table th,.long-table td{border:.5pt solid #555;padding:1.05mm .8mm;overflow-wrap:anywhere;vertical-align:middle}.top-table th,.long-table th{background:#e6e6e6;font-weight:700;text-align:center}.top-table tr,.long-table tr{break-inside:avoid;page-break-inside:avoid}.top-table th:first-child,.top-table td:first-child{width:25%}.note-section{margin-top:2mm;border:1px solid #555;padding:1.5mm 2mm;break-inside:avoid}.note-box{white-space:normal;line-height:1.25;font-size:7pt}.long-table{width:100%;margin-top:2.5mm}.long-table table{font-size:7pt}.long-table th,.long-table td{padding:1mm 1.5mm}.sheet-footnotes{margin-top:1.5mm;font-size:6.5pt;line-height:1.2}.sheet-footnotes div{margin:0 0 .7mm}.footer{margin-top:2mm;text-align:right;font-size:8pt;font-weight:bold}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body><h1>SNCT 경조사비 지급기준</h1><div class="layout"><div class="left-col">${left}${note}</div><div class="right-col">${right}${long}${longNotes}</div></div><div class="footer">선광신컨테이너터미널(주) 노동조합</div><script>window.onload=()=>{setTimeout(()=>{window.focus();window.print()},250)};<\/script></body></html>`);w.document.close();
  };
  if(document.getElementById("members-table")) renderMembers();
@@ -1219,7 +1211,7 @@ function exportCurrentPanelExcel(){
   if(!active){showToast('엑셀로 내보낼 화면을 찾을 수 없습니다.',true);return;}
   // 각종현황은 현재 선택된 하위 화면만 내보낸다.
   let target=active;
-  let title=active.querySelector('.panel-head h2')?.innerText?.trim()||active.querySelector('h2')?.innerText?.trim()||'조합사무국';
+  let title=active.querySelector('.panel-head h2')?.innerText?.trim()||active.querySelector('h2')?.innerText?.trim()||'인쇄';
   if(active.id==='tab-status'){
     const selected=['benefits','sponsor','policies'].find(v=>!document.getElementById(v+'-view')?.hidden)||'benefits';
     target=document.getElementById(selected+'-view')||active;
@@ -1771,8 +1763,10 @@ function renderBankPreview(rows, noticeText){
   $('#btn-bp-cancel').addEventListener('click', ()=>{ bankPreviewRows=[]; $('#bank-preview').innerHTML=''; });
   refreshLockUI();
 }
-/* ---------- 검색 ---------- */
+/* ---------- 데이터 조회 ---------- */
+let dataFilteredView = false;
 function renderSearch(){
+  dataFilteredView = true;
   const start=$('#s-start').value, end=$('#s-end').value, kw=$('#s-keyword').value.trim();
   let list = entries;
   if(start) list = list.filter(e=>e.date>=start);
@@ -1780,6 +1774,7 @@ function renderSearch(){
   if(kw) list = list.filter(e=> [e.category,e.item,e.method,e.note].join(' ').toLowerCase().includes(kw.toLowerCase()));
   const income = list.filter(e=>e.type==='수입').reduce((s,e)=>s+e.amount,0);
   const expense = list.filter(e=>e.type==='지출').reduce((s,e)=>s+e.amount,0);
+  $('#data-table').hidden = true; $('#search-stats').hidden = false; $('#search-table').hidden = false;
   $('#search-stats').innerHTML = `
     <div class="stat income"><div class="l">검색 수입합계</div><div class="v">${fmt(income)}</div></div>
     <div class="stat expense"><div class="l">검색 지출합계</div><div class="v">${fmt(expense)}</div></div>
@@ -1795,6 +1790,14 @@ function renderSearch(){
     <td class="num">${fmt(e.amount)}</td><td class="num">${fmt(e.balance)}</td><td>${e.note||''}</td></tr>`).join('') + `</tbody></table></div>`;
 }
 $('#btn-search').addEventListener('click', renderSearch);
+$('#btn-data-all').addEventListener('click', ()=>{
+  dataFilteredView=false;
+  $('#s-start').value=''; $('#s-end').value=''; $('#s-keyword').value='';
+  $('#search-stats').hidden=true; $('#search-table').hidden=true;
+  $('#search-stats').innerHTML=''; $('#search-table').innerHTML='';
+  $('#data-table').hidden=false;
+  renderDataTable();
+});
 
 /* ---------- 월간내역 ---------- */
 const MONTH_ORDER=[6,7,8,9,10,11,12,1,2,3,4,5];
